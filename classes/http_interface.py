@@ -4,10 +4,10 @@ import numpy as np
 
 from classes.Tile import Tile
 from classes.Types import GridLocation
-from classes.graph import graph
+from classes.Graph import graph
 from vendor.gdmc_http_client.interfaceUtils import setBlock
 from vendor.gdmc_http_client.worldLoader import WorldSlice
-from vendor.gdmc_http_client import mapUtils
+import vendor.gdmc_http_client 
 
 
 def get_world_state(paint_fence=False, area=(0, 0, 100, 60)) -> graph:

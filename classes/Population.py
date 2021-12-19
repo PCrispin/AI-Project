@@ -8,14 +8,14 @@ from operator import attrgetter
 from numpy import random
 import numpy as np
 from scipy.stats import multivariate_normal
-from classes.graph import (
+from classes.Graph import (
     calculate_distance_fitness_from_water,
     calculate_flatness_fitness,
     calculate_house_distance_fitness,
     graph,
 )
 
-from classes.location_genome import LocationGenome
+from classes.Location_Genome import LocationGenome
 from classes.Types import GridLocation
 from classes.misc_functions import get_build_coord
 from sklearn.preprocessing import minmax_scale

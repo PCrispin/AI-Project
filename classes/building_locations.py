@@ -2,7 +2,7 @@
     on the building sites
  """
 from classes.ENUMS.block_codes import block_codes
-from classes.location_genome import LocationGenome
+from classes.Location_Genome import LocationGenome
 from classes.misc_functions import get_build_coord
 
 import vendor.gdmc_http_client.interfaceUtils

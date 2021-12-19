@@ -8,7 +8,7 @@ import statistics
 import numpy as np
 from classes.ENUMS.block_codes import block_codes
 from classes.Types import GridLocation, TileMap
-from classes.location_genome import LocationGenome
+from classes.Location_Genome import LocationGenome
 from classes.misc_functions import get_build_coord
 import numpy as np
 import matplotlib.pyplot as plt
