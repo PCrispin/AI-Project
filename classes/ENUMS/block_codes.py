@@ -9,9 +9,14 @@ class block_codes(Enum):
     """
 
     WATER = "minecraft:water"
+    FLOWING_WATER = "minecraft:flowing_water"
+    ICE = "minecraft:ice"
+    PACKED_ICE = "minecraft:packed_ice"
+    BLUE_ICE = "minecraft:blue_ice"
+    FROSTED_ICE = "minecraft:frosted_ice"
+
     RED_WOOL = "red_wool"
     PURPLE_WOOL = "purple_wool"
-    FLOWING_WATER = "minecraft:flowing_water"
     BUILDABLE = 2
     TREE = 3
     HOUSE = 7

@@ -8,3 +8,5 @@ class building_types(Enum):
     RESTAURANT = 1
     FACTORY = 2
     SHOP = 3
+    FLATS = 4
+    TOWN_HALL = 5

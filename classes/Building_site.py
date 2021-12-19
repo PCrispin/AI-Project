@@ -93,7 +93,6 @@ class building_site(object):
     def side_wall_coordinate(self, side: orientations) -> int:
             return self.coords[side.value]
 
-
     def map_coords_to_site_coords(self, x: int, y:int, z:int)-> Tuple[int, int, int]:
         #coords undergo translation and rotation
         return self.x_zero + self.x_factor * x, self.y_min + y, self.z_zero + self.z_factor * z

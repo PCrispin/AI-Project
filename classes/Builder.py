@@ -38,7 +38,8 @@ class Builder:
         MIN_HEIGHT = 0
         MAX_WIDTH_OF_TREE = 10
         BLOCK_BATCH_SIZE = 1000
-        WATER_CODES = [block_codes.WATER, block_codes.FLOWING_WATER]
+        WATER_CODES = [block_codes.WATER, block_codes.FLOWING_WATER, block_codes.ICE
+                       , block_codes.PACKED_ICE, block_codes.BLUE_ICE, block_codes.FROSTED_ICE]
 
         chopped = []    #Need to track because chopping trees instruction is delayed before commit
 
@@ -205,28 +206,23 @@ class Builder:
         if len(self.sites) == 0:
             return False
         
-        xLast, zLast, oLast, bLast = self.sites[-1].x_center, self.sites[-1].z_center, self.sites[-1].orientation, self.builds[-1]
-
         last_site = self.sites[-1]
 
-        def h(n: int):
-            return int(n/2)
-
-        factorFrom = (-1, 1, 1, -1)[buildOnWhichSide.value]
-        factorToReverse = (1, -1, -1, 1)[orientation.value]
+        factorFrom = (-1, -1, 1, 1)[buildOnWhichSide.value] #w,n,e,s
+        factorToReverse = (1, 1, -1, -1)[orientation.value]
 
         if orientation in self.NS_ORIENTATION :
-            half_x = h(building.width)  #TODO - Should be final width
-            half_z = h(building.depth)
+            half_x = int(building.width/2)  #TODO - Should be final width
+            half_z = int(building.depth/2)
         else:
-            half_x = h(building.depth)
-            half_z = h(building.width)
+            half_x = int(building.depth/2)
+            half_z = int(building.width/2)
 
         if buildOnWhichSide in self.NS_ORIENTATION :
             x_center = last_site.side_wall_coordinate(orientation) + half_x * factorToReverse
-            z_center = last_site.side_wall_coordinate(buildOnWhichSide) + (gapBetweenBuildings + half_z) * factorFrom
+            z_center = last_site.side_wall_coordinate(buildOnWhichSide) + (gapBetweenBuildings + 1 + half_z) * factorFrom
         else :
-            x_center = last_site.side_wall_coordinate(buildOnWhichSide) + (gapBetweenBuildings + half_x) * factorFrom
+            x_center = last_site.side_wall_coordinate(buildOnWhichSide) + (gapBetweenBuildings + 1 + half_x) * factorFrom
             z_center = last_site.side_wall_coordinate(orientation) + half_z * factorToReverse
 
         return self.create(x_center, z_center, orientation, building, requiredWidth, requiredDepth)

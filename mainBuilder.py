@@ -14,7 +14,7 @@ builder = Builder()
 #structure = buildings.getBiggestBySize(15, 25)
 
 structure = buildingMaps.getByName(building_names.APPLE_STORE)
-builder.create(-163, 188, orientations.EAST, structure)
+builder.create(-235, 381, orientations.EAST, structure)
 
 for i in range(1, 5):
     structure = buildingMaps.getRandomBySize(15, 25)

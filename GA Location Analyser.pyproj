@@ -35,6 +35,9 @@
     </Compile>
     <Compile Include="classes\ENUMS\block_codes.py" />
     <Compile Include="classes\ENUMS\building_names.py" />
+    <Compile Include="classes\ENUMS\building_styles.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="classes\ENUMS\building_types.py">
       <SubType>Code</SubType>
     </Compile>
@@ -82,7 +85,6 @@
     <Content Include="classes\ENUMS\__pycache__\landscapes.cpython-39.pyc" />
     <Content Include="classes\ENUMS\__pycache__\walled_block_codes.cpython-38.pyc" />
     <Content Include="classes\ENUMS\__pycache__\walled_block_codes.cpython-39.pyc" />
-    <Content Include="classes\http_interface.py.bak" />
     <Content Include="classes\__pycache__\Data_Reference.cpython-38.pyc" />
     <Content Include="classes\__pycache__\Genome.cpython-38.pyc" />
     <Content Include="classes\__pycache__\Graph.cpython-38.pyc" />
