@@ -111,7 +111,7 @@ def calculate_block_map(world_slice) -> np.ndarray:
     return np.array(block_map)
 
 
-def get_material_and_height_map(world_slice) -> tuple[np.ndarray, np.ndarray]:
+def get_material_and_height_map(world_slice):
     """Get array of materials at y index  and y index
 
     Args:
@@ -125,7 +125,7 @@ def get_material_and_height_map(world_slice) -> tuple[np.ndarray, np.ndarray]:
     return block_map, height_map
 
 
-def paint_block(location: tuple[int, int, int], material: str) -> None:
+def paint_block(location, material: str) -> None:
     """Paints a block onto map at an X, Z, Y location)
 
     Args:

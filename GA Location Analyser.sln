@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31911.196
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "GA Location Analyser", "GA Location Analyser.pyproj", "{234F0147-5A2C-4C81-B6E6-1782C8EA9790}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{234F0147-5A2C-4C81-B6E6-1782C8EA9790}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{234F0147-5A2C-4C81-B6E6-1782C8EA9790}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1E0141E1-CE60-4D6D-9696-16C95A4B86C8}
+	EndGlobalSection
+EndGlobal

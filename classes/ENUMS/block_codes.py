@@ -2,8 +2,7 @@ from enum import Enum
 
 
 class block_codes(Enum):
-    """Master list of all block codes that you want to interact
-    with, or use
+    """Master list of all block codes
 
     Args:
         Enum (Int): Block code material
@@ -12,4 +11,11 @@ class block_codes(Enum):
     WATER = "minecraft:water"
     RED_WOOL = "red_wool"
     PURPLE_WOOL = "purple_wool"
-    AIR = "air"
+    FLOWING_WATER = "minecraft:flowing_water"
+    BUILDABLE = 2
+    TREE = 3
+    HOUSE = 7
+    PROPOSED = 9
+    FENCE = "minecraft:oak_fence"
+    AIR = "minecraft:air"
+    BEDROCK = "minecraft:bedrock"
