@@ -7,6 +7,7 @@
 
 import random
 from classes.Types import GridLocation
+from constants import MAX_BUILDING_RADIUS
 
 
 class LocationGenome:
@@ -59,9 +60,17 @@ class LocationGenome:
         return possible_coords
 
     def _get_random_possible_coordinate(self) -> tuple:
-        possible_coords = self._get_possible_coordinate()
-        random_choice = random.choice(possible_coords)
-        return random_choice
+        random_x_value = random.choice(
+            range(
+                (0 + MAX_BUILDING_RADIUS), (self.graph_space[0] - MAX_BUILDING_RADIUS)
+            )
+        )
+        random_z_value = random.choice(
+            range(
+                (0 + MAX_BUILDING_RADIUS), (self.graph_space[1] - MAX_BUILDING_RADIUS)
+            )
+        )
+        return (random_x_value, random_z_value)
 
     def _check_vector_possible(self) -> bool:
         location = (self.x, self.z)

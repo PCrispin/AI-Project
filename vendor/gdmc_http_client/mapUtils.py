@@ -12,8 +12,6 @@ __all__ = ["calc_good_heightmap"]
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from classes.Types import GridLocation
-
 from vendor.gdmc_http_client.interfaceUtils import setBlock
 
 
@@ -43,7 +41,6 @@ def normalize(array):
 
 def paint_fence(worldSlice, heightmap):
     """Paints a fence around the search area"""
-    print("hello")
     area = worldSlice.rect
     for x in range(area[0], area[0] + area[2]):
         z = area[1]

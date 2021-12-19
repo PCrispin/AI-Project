@@ -8,7 +8,6 @@ import statistics
 import numpy as np
 from classes.ENUMS.block_codes import block_codes
 from classes.Types import GridLocation, TileMap
-from classes.Location_Genome import LocationGenome
 from classes.misc_functions import get_build_coord
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,8 +17,7 @@ class graph:
     """Object representation of the TileMap"""
 
     def __init__(
-        self,
-        tile_map: TileMap,
+        self, tile_map: TileMap,
     ):
         self.x: int = len(tile_map)
         self.z: int = len(tile_map[0])
@@ -193,9 +191,7 @@ class graph:
 
 
 def calculate_distance_fitness_from_water(
-    location: GridLocation,
-    graph_representation: graph,
-    building_radius: int = 3,
+    location: GridLocation, graph_representation: graph, building_radius: int = 3,
 ) -> float:
     max_distance: int = (
         max((graph_representation.x / 2), (graph_representation.z / 2)) * 1.5
@@ -214,9 +210,7 @@ def calculate_distance_fitness_from_water(
 
 
 def calculate_flatness_fitness(
-    location: GridLocation,
-    graph_representation: graph,
-    building_radius: int = 3,
+    location: GridLocation, graph_representation: graph, building_radius: int = 3,
 ):
     build_coords = get_build_coord(
         (location[0], location[1]), building_radius=building_radius
@@ -225,9 +219,7 @@ def calculate_flatness_fitness(
 
 
 def calculate_house_distance_fitness(
-    location: GridLocation,
-    graph_representation: graph,
-    building_radius: int = 3,
+    location: GridLocation, graph_representation: graph, building_radius: int = 3,
 ) -> float:
     max_distance: int = (
         max((graph_representation.x / 2), (graph_representation.z / 2)) * 1.5

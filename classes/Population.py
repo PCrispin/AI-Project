@@ -16,25 +16,26 @@ from classes.Graph import (
 )
 
 from classes.Location_Genome import LocationGenome
-from classes.Types import GridLocation
+from classes.Timer import Timer
 from classes.misc_functions import get_build_coord
 from sklearn.preprocessing import minmax_scale
 
-MAX_BUILDING_RADIUS = 6
-MIN_BUILDING_RADIUS = 3
-WATER_DISTANCE_WEIGHTING = 1
-BUILDING_DISTANCE_WEIGHTING = 1.5
-FLATNESS_FITNESS_WEIGHTING = 1
-DEFAULT_MUTATION_RATE = 1 / 3
+from constants import (
+    DEFAULT_MUTATION_RATE,
+    DEFAULT_POPULATION_SIZE,
+    MAX_BUILDING_RADIUS,
+    MIN_BUILDING_RADIUS,
+)
 
 
 class Population:
     """Population class for location genome searching"""
 
+    @Timer(text="Population Generated in {:.2f} seconds")
     def __init__(
         self,
         g_repesentation: graph,
-        p_size=5,
+        p_size=DEFAULT_POPULATION_SIZE,
         init_random=False,
     ):
         self.p_size = p_size
@@ -57,6 +58,7 @@ class Population:
                 )
                 self.add_member(member)
 
+    @Timer(text="Walled Vectors Generated in {:.2f} seconds")
     def _get_walled_vectors(self) -> list:
         """Creates a boundary box within the search space of walled vectors."""
         walled_vectors = []
@@ -91,6 +93,7 @@ class Population:
         """
         self.members.append(location)
 
+    @Timer(text="Next Generation Generated in {:.2f} seconds")
     def next_generation(self):
         """Creates the next generation"""
 
@@ -116,6 +119,7 @@ class Population:
         self._clear_population_fitness_values()
         return child
 
+    @Timer(text="Tournament Ran in {:.2f} seconds")
     def run_tournament(self):
         """Calculates the fitness of the members
 
@@ -203,6 +207,7 @@ class Population:
                 self.members[i].fitness = 0.01
             else:
                 self.members[i].fitness += flatness_fitness_all[i]
+        print("")
 
     def _clear_population_fitness_values(self):
         """Clears all population fitness values"""
@@ -246,7 +251,6 @@ class Population:
         # convert to vector filter
         x_values = x_values - (building_radius // 2)
         z_values = y_values - (building_radius // 2)
-
         return np.array(x_values, z_values)
 
     def _mutate(self, location: LocationGenome):

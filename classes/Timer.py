@@ -12,6 +12,7 @@ class TimerError(Exception):
 
 @dataclass
 class Timer(ContextDecorator):
+
     """Time your code using a class, context manager, or decorator"""
 
     timers: ClassVar[Dict[str, float]] = dict()
