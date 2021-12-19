@@ -8,10 +8,10 @@
 
 import numpy as np
 from classes.building_locations import BuildingLocations
-from classes.graph import graph
+from classes.Graph import graph
 from classes.http_interface import get_world_state
-from classes.location_genome import LocationGenome
-from classes.population import Population
+from classes.Location_Genome import LocationGenome
+from classes.Population import Population
 
 
 GENERATIONS = 10
