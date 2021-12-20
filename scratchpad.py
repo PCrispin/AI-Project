@@ -12,7 +12,7 @@ from constants import (
     MAXIMUM_DISTANCE_PENALTY,
     WATER_SEARCH_RADIUS,
 )
-
+import random
 
 # g_start = get_world_state(paint_fence=True, area=AREA)
 
@@ -22,8 +22,10 @@ X = 256
 Z = 256
 
 # generate building indexes around it
+water_tile_list = []
+for i in range(1000):
+    water_tile_list.append((random.randint(1, 255), random.randint(1, 255)))
 
-water_tile_list = [(25, 25), (21, 21), (5, 5), (16, 16), (15, 15)]
 tile_map = []
 for x_value in range(X):
     row = []
