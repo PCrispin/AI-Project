@@ -5,6 +5,7 @@
         the search space
     """
 import statistics
+from typing import Iterator
 import numpy as np
 from classes.ENUMS.block_codes import block_codes
 from classes.Types import GridLocation, TileMap
@@ -91,7 +92,6 @@ class graph:
             return False
 
     def calcuate_water_distance_experimental(self, location):
-        # If a location is IN water, return maximum distance
         build_locations = list(
             filter(
                 self.in_bounds_boolean,
@@ -117,7 +117,6 @@ class graph:
         search_vertexs = list(filter(self.in_bounds_boolean, check_vertexes))
 
         if any(x in search_vertexs for x in self.water_tiles):
-            print("Water in search area")
             # get commonalities in both lists
             water_tiles_in_search_radius = list(
                 set(search_vertexs).intersection(self.water_tiles)
@@ -130,7 +129,6 @@ class graph:
             closest_distance_value = distances[closest_distance_vector]
             return closest_distance_value
         else:
-            print("Water not in search area")
             return MAXIMUM_DISTANCE_PENALTY
 
     def calculate_distance_from_water_vectors(self, location: GridLocation) -> float:
@@ -179,20 +177,20 @@ class graph:
             z_indexes.append(self.tile_map[tile[0], tile[1]].z)
         return np.std(z_indexes)
 
-    def calculate_ideal_y_plane(self, build_list: list) -> int:
-        """Return ideal y plane for building location
+    # def calculate_ideal_y_plane(self, build_list: list) -> int:
+    #     """Return ideal y plane for building location
 
-        Args:
-            build_list (list): blocks used to build location
+    #     Args:
+    #         build_list (list): blocks used to build location
 
-        Returns:
-            int: [description]
-        """
-        y_indexes = []
-        for tile in build_list:
-            y_indexes.append(self.tile_map[tile[0], tile[1]].z)
+    #     Returns:
+    #         int: [description]
+    #     """
+    #     y_indexes = []
+    #     for tile in build_list:
+    #         y_indexes.append(self.tile_map[tile[0], tile[1]].z)
 
-        return int(statistics.mean(y_indexes))
+    #     return int(statistics.mean(y_indexes))
 
     def visualise(self, autonormalize=True):
         """Creates plots to visualise the fitness map."""
@@ -236,26 +234,14 @@ class graph:
         show_plot(w_f_m)
         show_plot(a_f_m)
 
-
-def calculate_distance_fitness_from_water(
-    location: GridLocation,
-    graph_representation: graph,
-    building_radius: int = 3,
-) -> float:
-    max_distance: int = (
-        max((graph_representation.x / 2), (graph_representation.z / 2)) * 1.5
-    )
-    build_coords = get_build_coord(
-        (location[0], location[1]), building_radius=building_radius
-    )
-
-    in_water = any(x in build_coords for x in graph_representation.water_tiles)
-    if in_water:
-        return max_distance * 1.5
-    else:
-        return graph_representation.calculate_distance_from_water_vectors(
-            (location[0], location[1])
-        )
+    def neighbors(self, id: GridLocation) -> Iterator[GridLocation]:
+        (x, y) = id
+        neighbors = [(x + 1, y), (x - 1, y), (x, y - 1), (x, y + 1)]  # E W N S
+        # see "Ugly paths" section for an explanation:
+        if (x + y) % 2 == 0:
+            neighbors.reverse()  # S N W E
+        results = filter(self.in_bounds_boolean, neighbors)
+        return results
 
 
 def calculate_flatness_fitness(

@@ -9,7 +9,6 @@ from numpy import random
 import numpy as np
 from scipy.stats import multivariate_normal
 from classes.Graph import (
-    calculate_distance_fitness_from_water,
     calculate_flatness_fitness,
     calculate_house_distance_fitness,
     graph,
@@ -37,6 +36,8 @@ class Population:
         g_repesentation: graph,
         p_size=DEFAULT_POPULATION_SIZE,
         init_random=False,
+        fitness_water_distance=True,
+        fitness_building_location=False,
     ):
         self.p_size = p_size
         self.members = []
@@ -118,69 +119,21 @@ class Population:
         """Calculates the population fitness"""
 
         water_distance_fitness = []
-        house_distance_fitness = []
-        flatness_fitness_all = []
-
-        for member in self.members:
-            if len(self.graph.water_tiles) != 0:
-                water_fitness = self.graph.calcuate_water_distance_experimental(
-                    location=(member.x, member.z)
-                )
-                # water_fitness = calculate_distance_fitness_from_water(
-                #     location=(member.x, member.z),
-                #     graph_representation=self.graph,
-                #     building_radius=member.building_radius,
-                # )
-                member.water_distance_fitness = water_fitness
-                water_distance_fitness.append(water_fitness)
-
-            if len(self.graph.building_tiles) != 0:
-                building_fitness = calculate_house_distance_fitness(
-                    location=(member.x, member.z),
-                    graph_representation=self.graph,
-                    building_radius=member.building_radius,
-                )
-                member.build_distance_fitness = building_fitness
-                house_distance_fitness.append(building_fitness)
-
-            flatness_fitness = calculate_flatness_fitness(
-                location=(member.x, member.z),
-                graph_representation=self.graph,
-                building_radius=member.building_radius,
-            )
-
-            member.flatness_fitness = flatness_fitness
-            flatness_fitness_all.append(flatness_fitness)
-
         if len(self.graph.water_tiles) != 0:
+            for member in self.members:
+                if len(self.graph.water_tiles) != 0:
+                    water_fitness = self.graph.calcuate_water_distance_experimental(
+                        location=(member.x, member.z)
+                    )
+                    member.water_distance_fitness = water_fitness
+                    water_distance_fitness.append(water_fitness)
             water_distance_fitness = minmax_scale(
-                water_distance_fitness, feature_range=(0, 1), axis=0
+                water_distance_fitness, feature_range=(1, 2), axis=0
             )
-        if len(self.graph.building_tiles) != 0:
-            house_distance_fitness = minmax_scale(
-                house_distance_fitness, feature_range=(0, 1), axis=0
-            )
-        flatness_fitness_all = minmax_scale(
-            flatness_fitness_all, feature_range=(0, 1), axis=0
-        )
-
-        # Multiply value by scalar (if required)
-        if len(self.graph.water_tiles) != 0:
-            water_distance_fitness = water_distance_fitness * 1.5
-        if len(self.graph.building_tiles) != 0:
-            house_distance_fitness = house_distance_fitness * 1.75
-        flatness_fitness_all = flatness_fitness_all * 1
-
-        # Calculate overall fitness value for each member
-        for i in range(len(self.members)):
-            if len(water_distance_fitness) != 0:
-                self.members[i].fitness += water_distance_fitness[i]
-            if len(house_distance_fitness) != 0:
-                self.members[i].fitness += house_distance_fitness[i]
-            if flatness_fitness_all[i] == 0:  # Hacky AF to avoid division by 0
-                self.members[i].fitness = 0.01
-            else:
-                self.members[i].fitness += flatness_fitness_all[i]
+            for i in range(len(self.members)):
+                self.members[i].fitness += water_distance_fitness[i] * 2
+                if self.members[i].fitness == 0:
+                    print("yikes")
 
     def _clear_population_fitness_values(self):
         """Clears all population fitness values"""
@@ -251,7 +204,7 @@ class Population:
         build_coords = get_build_coord(
             location=(fitess.x, fitess.z), building_radius=fitess.building_radius
         )
-        ideal_y = self.graph.calculate_ideal_y_plane(build_list=build_coords)
+        ideal_y = 100
         fitess.ideal_y = ideal_y
         return fitess
 
