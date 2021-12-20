@@ -23,8 +23,10 @@ Z = 256
 
 # generate building indexes around it
 water_tile_list = []
+search_tiles = []
 for i in range(1000):
     water_tile_list.append((random.randint(1, 255), random.randint(1, 255)))
+    search_tiles.append((random.randint(1, 255), random.randint(1, 255)))
 
 tile_map = []
 for x_value in range(X):
@@ -117,9 +119,17 @@ def breadth_first_search(g, start):
 
     search_area = []
     for x_value in range(search_x_start, start[0] + int(WATER_SEARCH_RADIUS / 2)):
-        row = []
-        for z_value in range(search_x_start, start[0] + int(WATER_SEARCH_RADIUS / 2)):
-            row.append(g.tile_map[x_value][z_value])
+        if x_value > 255:
+            break
+        else:
+            row = []
+            for z_value in range(
+                search_x_start, start[0] + int(WATER_SEARCH_RADIUS / 2)
+            ):
+                if z_value > 255:
+                    break
+                else:
+                    row.append(g.tile_map[x_value][z_value])
         search_area.append(row)
     tmp_graph = graph(search_area)
     frontier = Queue()
@@ -141,5 +151,6 @@ def breadth_first_search(g, start):
                 reached[next] = True
 
 
-flood_fill_search((10, 10), g=g)
-breadth_first_search(g, (10, 10))
+for tile in search_tiles:
+    flood_fill_search(tile, g=g)
+    breadth_first_search(g, tile)
