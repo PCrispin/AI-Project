@@ -12,12 +12,15 @@ from classes.misc_functions import get_build_coord
 import numpy as np
 import matplotlib.pyplot as plt
 
+from constants import MAXIMUM_DISTANCE_PENALTY, WATER_SEARCH_RADIUS
+
 
 class graph:
     """Object representation of the TileMap"""
 
     def __init__(
-        self, tile_map: TileMap,
+        self,
+        tile_map: TileMap,
     ):
         self.x: int = len(tile_map)
         self.z: int = len(tile_map[0])
@@ -87,7 +90,51 @@ class graph:
         else:
             return False
 
+    def calcuate_water_distance_experimental(self, location):
+        # If a location is IN water, return maximum distance
+        build_locations = list(
+            filter(
+                self.in_bounds_boolean,
+                get_build_coord(location=location, building_radius=3),
+            )
+        )
+        if any(x in build_locations for x in self.water_tiles):
+            return MAXIMUM_DISTANCE_PENALTY
+
+        start_vertex = (
+            location[0] - int(WATER_SEARCH_RADIUS / 2),
+            location[1] - int(WATER_SEARCH_RADIUS / 2),
+        )
+
+        # otherwise calculate if its near water
+        check_vertexes = []
+        for width in range(0, WATER_SEARCH_RADIUS):
+            for height in range(0, WATER_SEARCH_RADIUS):
+                check_vertexes.append(
+                    (start_vertex[0] + width, start_vertex[1] + height)
+                )
+
+        search_vertexs = list(filter(self.in_bounds_boolean, check_vertexes))
+
+        if any(x in search_vertexs for x in self.water_tiles):
+            print("Water in search area")
+            # get commonalities in both lists
+            water_tiles_in_search_radius = list(
+                set(search_vertexs).intersection(self.water_tiles)
+            )
+
+            distances = {}
+            for tile in water_tiles_in_search_radius:
+                distances[tile] = manhattan(tile, location)
+            closest_distance_vector = min(distances, key=distances.get)
+            closest_distance_value = distances[closest_distance_vector]
+            return closest_distance_value
+        else:
+            print("Water not in search area")
+            return MAXIMUM_DISTANCE_PENALTY
+
     def calculate_distance_from_water_vectors(self, location: GridLocation) -> float:
+
         """Calculates the average manhattan distance for a location from all water vectors
 
         Args:
@@ -191,7 +238,9 @@ class graph:
 
 
 def calculate_distance_fitness_from_water(
-    location: GridLocation, graph_representation: graph, building_radius: int = 3,
+    location: GridLocation,
+    graph_representation: graph,
+    building_radius: int = 3,
 ) -> float:
     max_distance: int = (
         max((graph_representation.x / 2), (graph_representation.z / 2)) * 1.5
@@ -210,7 +259,9 @@ def calculate_distance_fitness_from_water(
 
 
 def calculate_flatness_fitness(
-    location: GridLocation, graph_representation: graph, building_radius: int = 3,
+    location: GridLocation,
+    graph_representation: graph,
+    building_radius: int = 3,
 ):
     build_coords = get_build_coord(
         (location[0], location[1]), building_radius=building_radius
@@ -219,7 +270,9 @@ def calculate_flatness_fitness(
 
 
 def calculate_house_distance_fitness(
-    location: GridLocation, graph_representation: graph, building_radius: int = 3,
+    location: GridLocation,
+    graph_representation: graph,
+    building_radius: int = 3,
 ) -> float:
     max_distance: int = (
         max((graph_representation.x / 2), (graph_representation.z / 2)) * 1.5

@@ -41,7 +41,6 @@ class Population:
         self.p_size = p_size
         self.members = []
         self.graph = g_repesentation
-        self.walled_vectors = self._get_walled_vectors()
         self.prob_mutation = DEFAULT_MUTATION_RATE
         self.total_fitness = 0
         self.fitness_probabilities: list = []
@@ -49,7 +48,6 @@ class Population:
         if init_random:
             for _ in range(self.p_size):
                 member = LocationGenome(
-                    walled_vectors=self.walled_vectors,
                     graph_space=(self.graph.x, self.graph.z),
                     init_random=True,
                     building_radius=random.randint(
@@ -57,33 +55,6 @@ class Population:
                     ),
                 )
                 self.add_member(member)
-
-    @Timer(text="Walled Vectors Generated in {:.2f} seconds")
-    def _get_walled_vectors(self) -> list:
-        """Creates a boundary box within the search space of walled vectors."""
-        walled_vectors = []
-        for z_values in range(self.graph.z):  # Top
-            for x_values in range(MAX_BUILDING_RADIUS):
-                walled_vectors.append((x_values, z_values))
-        for x_values in range(
-            self.graph.x - MAX_BUILDING_RADIUS, self.graph.x
-        ):  # Bottom
-            for z_values in range(self.graph.z):
-                walled_vectors.append((x_values, z_values))
-        for x_values in range(self.graph.x):  # Left
-            for z_values in range(0, MAX_BUILDING_RADIUS):
-                walled_vectors.append((x_values, z_values))
-        for x_values in range(self.graph.x):  # Right
-            for z_values in range(self.graph.z - MAX_BUILDING_RADIUS, self.graph.z):
-                walled_vectors.append((x_values, z_values))
-        if len(self.graph.building_tiles) > 1:
-            for location in self.graph.building_tiles:
-                walled_vectors.append(location)
-
-        # cleaning up list
-        walled_vectors = list(set(walled_vectors))
-        walled_vectors.sort(key=lambda y: y[0])
-        return walled_vectors
 
     def add_member(self, location: LocationGenome):
         """Adds a member to the population
@@ -152,11 +123,14 @@ class Population:
 
         for member in self.members:
             if len(self.graph.water_tiles) != 0:
-                water_fitness = calculate_distance_fitness_from_water(
-                    location=(member.x, member.z),
-                    graph_representation=self.graph,
-                    building_radius=member.building_radius,
+                water_fitness = self.graph.calcuate_water_distance_experimental(
+                    location=(member.x, member.z)
                 )
+                # water_fitness = calculate_distance_fitness_from_water(
+                #     location=(member.x, member.z),
+                #     graph_representation=self.graph,
+                #     building_radius=member.building_radius,
+                # )
                 member.water_distance_fitness = water_fitness
                 water_distance_fitness.append(water_fitness)
 
@@ -207,7 +181,6 @@ class Population:
                 self.members[i].fitness = 0.01
             else:
                 self.members[i].fitness += flatness_fitness_all[i]
-        print("")
 
     def _clear_population_fitness_values(self):
         """Clears all population fitness values"""
@@ -259,7 +232,6 @@ class Population:
         new_location = (location.x, location.z) + mutation_filter
         building_size = random.randint(MIN_BUILDING_RADIUS, MAX_BUILDING_RADIUS)
         mutation = LocationGenome(
-            walled_vectors=self.walled_vectors,
             graph_space=(self.graph.x, self.graph.z),
             grid_location=new_location,
             building_radius=building_size,
