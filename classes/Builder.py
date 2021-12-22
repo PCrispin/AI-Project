@@ -14,9 +14,6 @@ class Builder:
     """Builds Buildings!"""
 
     sites = []
-    builds = []
-
-    NS_ORIENTATION = [orientations.NORTH, orientations.SOUTH]
 
     def __init__(self):
         pass
@@ -29,7 +26,7 @@ class Builder:
         if building is None:
             runCommand("tell @a 'No building provided.  Possibly area too small.'")
             print("No building provided.")
-            return False
+            return False, None
         
         site = building_site(building, xCenter, zCenter, orientation, requiredWidth, requiredDepth)
 
@@ -118,7 +115,7 @@ class Builder:
         if yOffset - yMin  > MAX_BUILDING_FOUNDATION_HEIGHT :
             hill = yMin - yOffset
             runCommand("tell @a 'Can not build there!  Too hilly: " + str(hill) + " blocks from top to bottom.'")
-            print("Can not build there!  Too hilly: ' + str(hill) + ' blocks from top to bottom.")
+            print("Can not build there!  Too hilly: " + str(hill) + " blocks from top to bottom.")
             return False
         if yMin != yOffset :
             buildFoundationsInRegion(site.coords[0], site.coords[1], site.coords[2], site.coords[3], yOffset)
@@ -196,33 +193,26 @@ class Builder:
         sendBlocks()
 
         self.sites.append(site)
-        self.builds.append(building)
 
         print(f"Built: {site.get_description()}")
 
         return True
 
-    def createAdjacentToLast(self, buildOnWhichSide :orientations, gapBetweenBuildings: int, orientation :orientations, building: building, requiredWidth: int = -1, requiredDepth: int = -1) -> bool :
+    def create_adjacent_to_last(self, buildOnWhichSide :orientations, gapBetweenBuildings: Tuple[int, building_site]
+                             , orientation :orientations, building: building
+                             , requiredWidth: int = -1, requiredDepth: int = -1) -> bool :
+
         if len(self.sites) == 0:
             return False
         
-        last_site = self.sites[-1]
-
-        factorFrom = (-1, -1, 1, 1)[buildOnWhichSide.value] #w,n,e,s
-        factorToReverse = (1, 1, -1, -1)[orientation.value]
-
-        if orientation in self.NS_ORIENTATION :
-            half_x = int(building.width/2)  #TODO - Should be final width
-            half_z = int(building.depth/2)
-        else:
-            half_x = int(building.depth/2)
-            half_z = int(building.width/2)
-
-        if buildOnWhichSide in self.NS_ORIENTATION :
-            x_center = last_site.side_wall_coordinate(orientation) + half_x * factorToReverse
-            z_center = last_site.side_wall_coordinate(buildOnWhichSide) + (gapBetweenBuildings + 1 + half_z) * factorFrom
-        else :
-            x_center = last_site.side_wall_coordinate(buildOnWhichSide) + (gapBetweenBuildings + 1 + half_x) * factorFrom
-            z_center = last_site.side_wall_coordinate(orientation) + half_z * factorToReverse
+        x_center, z_center = self.sites[-1].calc_adjacent_location(orientation, gapBetweenBuildings
+                                                                   , orientation, building
+                                                                   , requiredWidth, requiredDepth)
 
         return self.create(x_center, z_center, orientation, building, requiredWidth, requiredDepth)
+
+    def last_site(self) -> building_site :
+        if len(self.sites) > 0 :
+            return self.sites[-1]
+        else:
+            return None

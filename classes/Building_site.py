@@ -2,7 +2,7 @@ from classes.ENUMS.orientations import orientations
 from classes.Building import building
 from classes.ENUMS.building_types import building_types
 from classes.ENUMS.building_names import building_names
-from typing import Tuple
+from typing import Tuple, List
 
 class building_site(object):
     AREA_EXPANDED_MARGIN = 5
@@ -41,7 +41,8 @@ class building_site(object):
     building_map_x_index = 0
     building_map_z_index = 2
 
-    def __init__(self, building: building, x_center: int, z_center: int, orientation: orientations, required_width: int = 0, required_depth: int = 0):
+    def __init__(self, building: building, x_center: int, z_center: int, orientation: orientations
+                 , required_width: int = 0, required_depth: int = 0):
         self.x_center = x_center
         self.z_center = z_center
         self.building_type = building.type
@@ -67,6 +68,7 @@ class building_site(object):
 
         self.final_x_length = self.raw_x_length + len(self.repeaterXs) - 1
         self.final_z_length = self.raw_z_length + len(self.repeaterZs) - 1
+        self.area = self.final_x_length * self.final_z_length
 
         self.x_factor, self.z_factor = ((-1, 1), (-1, -1), (1, -1), (1, 1))[orientation.value] #w,n,e,s
 
@@ -83,15 +85,17 @@ class building_site(object):
                               , self.final_z_length + 2 * self.AREA_EXPANDED_MARGIN)
 
         if orientation in (orientations.NORTH, orientations.SOUTH):
-            self.doorLocation = ((self.x_center, self.side_wall_coordinate(orientation) + self.z_factor))
+            self.door_location = ((self.x_center, self.side_wall_coordinate(orientation) + self.z_factor))
         else:
-            self.doorLocation = ((self.side_wall_coordinate(orientation) + self.x_factor, self.z_center))
+            self.door_location = ((self.side_wall_coordinate(orientation) + self.x_factor, self.z_center))
+
+        return
        
     def set_altitude(self, floor: int):
         self.y_min = floor
 
     def side_wall_coordinate(self, side: orientations) -> int:
-            return self.coords[side.value]
+            return self.coords[side.value] #w,n,e,s
 
     def map_coords_to_site_coords(self, x: int, y:int, z:int)-> Tuple[int, int, int]:
         #coords undergo translation and rotation
@@ -99,3 +103,36 @@ class building_site(object):
 
     def get_description(self) -> str:
         return f"{self.building_name.name} built at [{self.coords[0]},{self.coords[1]}] size: [{self.final_x_length},{self.final_z_length}] at height {self.y_min}"
+
+    def calc_adjacent_location(self, buildOnWhichSide :orientations, gapBetweenBuildings: int
+                               , orientation :orientations, building: building
+                               , requiredWidth: int = -1, requiredDepth: int = -1) -> Tuple[int, int]:
+
+        factorFrom = (-1, -1, 1, 1)[buildOnWhichSide.value] #w,n,e,s
+        factorToReverse = (1, 1, -1, -1)[orientation.value] #w,n,e,s
+
+        if orientation in (orientations.NORTH, orientations.SOUTH) :
+            half_x = int(building.width / 2)  #TODO - Should be final width
+            half_z = int(building.depth / 2)
+        else:
+            half_x = int(building.depth / 2)
+            half_z = int(building.width / 2)
+
+        if buildOnWhichSide in (orientations.NORTH, orientations.SOUTH) :
+            x_center = self.side_wall_coordinate(orientation) + half_x * factorToReverse
+            z_center = self.side_wall_coordinate(buildOnWhichSide) + (gapBetweenBuildings + 1 + half_z) * factorFrom
+        else :
+            x_center = self.side_wall_coordinate(buildOnWhichSide) + (gapBetweenBuildings + 1 + half_x) * factorFrom
+            z_center = self.side_wall_coordinate(orientation) + half_z * factorToReverse
+
+        return x_center, z_center
+
+    @classmethod
+    def move_location(self, location: Tuple[int, int], direction: orientations, distance: int) -> Tuple[int, int] :
+        factor = (-1, -1, 1, 1)[direction.value] #w,n,e,s        
+
+        if direction in (orientations.NORTH, orientations.SOUTH) :
+            return location[0], location[1] + factor * distance
+        else :
+            return location[0] + factor * distance, location[1]
+
