@@ -1,5 +1,3 @@
-# timer.py
-
 from contextlib import ContextDecorator
 from dataclasses import dataclass, field
 import time
@@ -42,8 +40,8 @@ class Timer(ContextDecorator):
         self._start_time = None
 
         # Report elapsed time
-        # if self.logger:
-        #     self.logger(self.text.format(elapsed_time))
+        if self.logger:
+            self.logger(self.text.format(elapsed_time))
         if self.name:
             self.timers[self.name] += elapsed_time
 

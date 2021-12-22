@@ -9,38 +9,39 @@ from numpy import random
 import numpy as np
 from scipy.stats import multivariate_normal
 from classes.Graph import (
-    calculate_distance_fitness_from_water,
     calculate_flatness_fitness,
     calculate_house_distance_fitness,
     graph,
 )
 
 from classes.Location_Genome import LocationGenome
-from classes.Types import GridLocation
+from classes.Timer import Timer
 from classes.misc_functions import get_build_coord
 from sklearn.preprocessing import minmax_scale
 
-MAX_BUILDING_RADIUS = 6
-MIN_BUILDING_RADIUS = 3
-WATER_DISTANCE_WEIGHTING = 1
-BUILDING_DISTANCE_WEIGHTING = 1.5
-FLATNESS_FITNESS_WEIGHTING = 1
-DEFAULT_MUTATION_RATE = 1 / 3
+from constants import (
+    DEFAULT_MUTATION_RATE,
+    DEFAULT_POPULATION_SIZE,
+    MAX_BUILDING_RADIUS,
+    MIN_BUILDING_RADIUS,
+)
 
 
 class Population:
     """Population class for location genome searching"""
 
+    @Timer(text="Population Generated in {:.2f} seconds")
     def __init__(
         self,
         g_repesentation: graph,
-        p_size=5,
+        p_size=DEFAULT_POPULATION_SIZE,
         init_random=False,
+        fitness_water_distance=True,
+        fitness_building_location=False,
     ):
         self.p_size = p_size
         self.members = []
         self.graph = g_repesentation
-        self.walled_vectors = self._get_walled_vectors()
         self.prob_mutation = DEFAULT_MUTATION_RATE
         self.total_fitness = 0
         self.fitness_probabilities: list = []
@@ -48,7 +49,6 @@ class Population:
         if init_random:
             for _ in range(self.p_size):
                 member = LocationGenome(
-                    walled_vectors=self.walled_vectors,
                     graph_space=(self.graph.x, self.graph.z),
                     init_random=True,
                     building_radius=random.randint(
@@ -56,32 +56,6 @@ class Population:
                     ),
                 )
                 self.add_member(member)
-
-    def _get_walled_vectors(self) -> list:
-        """Creates a boundary box within the search space of walled vectors."""
-        walled_vectors = []
-        for z_values in range(self.graph.z):  # Top
-            for x_values in range(MAX_BUILDING_RADIUS):
-                walled_vectors.append((x_values, z_values))
-        for x_values in range(
-            self.graph.x - MAX_BUILDING_RADIUS, self.graph.x
-        ):  # Bottom
-            for z_values in range(self.graph.z):
-                walled_vectors.append((x_values, z_values))
-        for x_values in range(self.graph.x):  # Left
-            for z_values in range(0, MAX_BUILDING_RADIUS):
-                walled_vectors.append((x_values, z_values))
-        for x_values in range(self.graph.x):  # Right
-            for z_values in range(self.graph.z - MAX_BUILDING_RADIUS, self.graph.z):
-                walled_vectors.append((x_values, z_values))
-        if len(self.graph.building_tiles) > 1:
-            for location in self.graph.building_tiles:
-                walled_vectors.append(location)
-
-        # cleaning up list
-        walled_vectors = list(set(walled_vectors))
-        walled_vectors.sort(key=lambda y: y[0])
-        return walled_vectors
 
     def add_member(self, location: LocationGenome):
         """Adds a member to the population
@@ -91,6 +65,7 @@ class Population:
         """
         self.members.append(location)
 
+    @Timer(text="Next Generation Generated in {:.2f} seconds")
     def next_generation(self):
         """Creates the next generation"""
 
@@ -116,6 +91,7 @@ class Population:
         self._clear_population_fitness_values()
         return child
 
+    @Timer(text="Tournament Ran in {:.2f} seconds")
     def run_tournament(self):
         """Calculates the fitness of the members
 
@@ -143,66 +119,21 @@ class Population:
         """Calculates the population fitness"""
 
         water_distance_fitness = []
-        house_distance_fitness = []
-        flatness_fitness_all = []
-
-        for member in self.members:
-            if len(self.graph.water_tiles) != 0:
-                water_fitness = calculate_distance_fitness_from_water(
-                    location=(member.x, member.z),
-                    graph_representation=self.graph,
-                    building_radius=member.building_radius,
-                )
-                member.water_distance_fitness = water_fitness
-                water_distance_fitness.append(water_fitness)
-
-            if len(self.graph.building_tiles) != 0:
-                building_fitness = calculate_house_distance_fitness(
-                    location=(member.x, member.z),
-                    graph_representation=self.graph,
-                    building_radius=member.building_radius,
-                )
-                member.build_distance_fitness = building_fitness
-                house_distance_fitness.append(building_fitness)
-
-            flatness_fitness = calculate_flatness_fitness(
-                location=(member.x, member.z),
-                graph_representation=self.graph,
-                building_radius=member.building_radius,
-            )
-
-            member.flatness_fitness = flatness_fitness
-            flatness_fitness_all.append(flatness_fitness)
-
         if len(self.graph.water_tiles) != 0:
+            for member in self.members:
+                if len(self.graph.water_tiles) != 0:
+                    water_fitness = self.graph.calcuate_water_distance_experimental(
+                        location=(member.x, member.z)
+                    )
+                    member.water_distance_fitness = water_fitness
+                    water_distance_fitness.append(water_fitness)
             water_distance_fitness = minmax_scale(
-                water_distance_fitness, feature_range=(0, 1), axis=0
+                water_distance_fitness, feature_range=(1, 2), axis=0
             )
-        if len(self.graph.building_tiles) != 0:
-            house_distance_fitness = minmax_scale(
-                house_distance_fitness, feature_range=(0, 1), axis=0
-            )
-        flatness_fitness_all = minmax_scale(
-            flatness_fitness_all, feature_range=(0, 1), axis=0
-        )
-
-        # Multiply value by scalar (if required)
-        if len(self.graph.water_tiles) != 0:
-            water_distance_fitness = water_distance_fitness * 1.5
-        if len(self.graph.building_tiles) != 0:
-            house_distance_fitness = house_distance_fitness * 1.75
-        flatness_fitness_all = flatness_fitness_all * 1
-
-        # Calculate overall fitness value for each member
-        for i in range(len(self.members)):
-            if len(water_distance_fitness) != 0:
-                self.members[i].fitness += water_distance_fitness[i]
-            if len(house_distance_fitness) != 0:
-                self.members[i].fitness += house_distance_fitness[i]
-            if flatness_fitness_all[i] == 0:  # Hacky AF to avoid division by 0
-                self.members[i].fitness = 0.01
-            else:
-                self.members[i].fitness += flatness_fitness_all[i]
+            for i in range(len(self.members)):
+                self.members[i].fitness += water_distance_fitness[i] * 2
+                if self.members[i].fitness == 0:
+                    print("yikes")
 
     def _clear_population_fitness_values(self):
         """Clears all population fitness values"""
@@ -246,7 +177,6 @@ class Population:
         # convert to vector filter
         x_values = x_values - (building_radius // 2)
         z_values = y_values - (building_radius // 2)
-
         return np.array(x_values, z_values)
 
     def _mutate(self, location: LocationGenome):
@@ -255,7 +185,6 @@ class Population:
         new_location = (location.x, location.z) + mutation_filter
         building_size = random.randint(MIN_BUILDING_RADIUS, MAX_BUILDING_RADIUS)
         mutation = LocationGenome(
-            walled_vectors=self.walled_vectors,
             graph_space=(self.graph.x, self.graph.z),
             grid_location=new_location,
             building_radius=building_size,
@@ -275,7 +204,7 @@ class Population:
         build_coords = get_build_coord(
             location=(fitess.x, fitess.z), building_radius=fitess.building_radius
         )
-        ideal_y = self.graph.calculate_ideal_y_plane(build_list=build_coords)
+        ideal_y = 100
         fitess.ideal_y = ideal_y
         return fitess
 

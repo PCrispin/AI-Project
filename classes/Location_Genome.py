@@ -7,6 +7,7 @@
 
 import random
 from classes.Types import GridLocation
+from constants import MAX_BUILDING_RADIUS
 
 
 class LocationGenome:
@@ -14,13 +15,11 @@ class LocationGenome:
 
     def __init__(
         self,
-        walled_vectors: list,  # prohibited squares
         graph_space: tuple,  # graph space where genes can occur
         grid_location: GridLocation = None,  # Previous x,z coord
         init_random=False,  # random genome
         building_radius: int = 1,
     ):
-        self.walled_vectors: list = walled_vectors
         self.graph_space: GridLocation = graph_space
         self.fitness: int = 0
         self.water_distance_fitness: int = 0
@@ -46,22 +45,14 @@ class LocationGenome:
         """
         return (self.x, self.z)
 
-    def _get_possible_coordinate(self) -> list:
-        possible_list = []
-        for z_value in range(self.graph_space[1]):
-            for x_value in range(self.graph_space[0]):
-                possible_list.append((x_value, z_value))
-
-        prohibited_coords = self.walled_vectors
-        possible_coords = [
-            item for item in possible_list if item not in prohibited_coords
-        ]
-        return possible_coords
-
     def _get_random_possible_coordinate(self) -> tuple:
-        possible_coords = self._get_possible_coordinate()
-        random_choice = random.choice(possible_coords)
-        return random_choice
+        random_x_value = random.choice(
+            range((MAX_BUILDING_RADIUS), (self.graph_space[0] - MAX_BUILDING_RADIUS))
+        )
+        random_z_value = random.choice(
+            range((MAX_BUILDING_RADIUS), (self.graph_space[1] - MAX_BUILDING_RADIUS))
+        )
+        return (random_x_value, random_z_value)
 
     def _check_vector_possible(self) -> bool:
         location = (self.x, self.z)

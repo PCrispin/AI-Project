@@ -3,11 +3,10 @@
 import numpy as np
 
 from classes.Tile import Tile
-from classes.Types import GridLocation
 from classes.Graph import graph
 from vendor.gdmc_http_client.interfaceUtils import setBlock
 from vendor.gdmc_http_client.worldLoader import WorldSlice
-import vendor.gdmc_http_client 
+import vendor.gdmc_http_client.mapUtils
 
 
 def get_world_state(paint_fence=False, area=(0, 0, 100, 60)) -> graph:
@@ -25,7 +24,9 @@ def get_world_state(paint_fence=False, area=(0, 0, 100, 60)) -> graph:
     world_slice = WorldSlice(area)
     block_map, height_map = get_material_and_height_map(world_slice=world_slice)
     if paint_fence:
-        mapUtils.paint_fence(worldSlice=world_slice, heightmap=height_map)
+        vendor.gdmc_http_client.mapUtils.paint_fence(
+            worldSlice=world_slice, heightmap=height_map
+        )
         world_slice = WorldSlice(area)
         block_map, height_map = get_material_and_height_map(world_slice=world_slice)
     input_space = calc_input_space(block_map=block_map, height_map=height_map)
