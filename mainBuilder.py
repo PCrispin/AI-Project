@@ -9,11 +9,17 @@ from classes.AStar import find_routes, MAX_DETOUR, A_BIG_NUMBER
 from vendor.gdmc_http_client.interfaceUtils import placeBlockBatched, sendBlocks, runCommand, getBlock
 import numpy as np
 from sys import maxsize 
+import sys
+from typing import List, Tuple
+from data.roads_routes import existing_roads_routes
+import time
 
 PERCENTAGE_OF_RESIDENTIAL = 0.6
 BLOCK_BATCH_SIZE = 1000
-DRAW_HOUSES_ON = False if getBlock(60, 70, -491) == "minecraft:stone" else True
+DRAW_HOUSES_ON = False #False if getBlock(60, 70, -491) == "minecraft:stone" else True
+USE_SAVED_ROUTES_DATA = True
 ROAD_WIDTH = 10
+NUMBER_OF_FAMILIES_IN_A_FLAT = 5
 
 #testing using map data/minecraft_maps/Test 1
 
@@ -91,9 +97,11 @@ for site1 in range(n_sites):
             manhattan_distances[site1][site2] = abs(door_locations[site1][0] - door_locations[site2][0]) + abs(door_locations[site1][1] - door_locations[site2][1])
             manhattan_distances[site2][site1] = manhattan_distances[site1][site2]
 
-indexes_ordered_total_distances = np.argsort([sum(col) for col in zip(*manhattan_distances)])
+indexes_ordered_total_distances = np.argsort([sum(col) for col in zip(*manhattan_distances)]) 
 functional_indices = indexes_ordered_total_distances[:number_of_functional]
 house_indices = indexes_ordered_total_distances[number_of_functional:]
+
+print(indexes_ordered_total_distances)
 
 roads = []
 roads_addresses = []
@@ -117,7 +125,89 @@ for site1 in range(n_sites) : # functional_indices:
 #        for connected in connected_sites:
 #            if min_distance < manhattan_distances :
 
-roads_routes = find_routes(roads_addresses, 15, 3, avoid_rects)
+if USE_SAVED_ROUTES_DATA :
+    roads_routes = existing_roads_routes
+else:
+    roads_routes = find_routes(roads_addresses, 15, 3, avoid_rects)
+
+start_bfs = time.time()
+
+
+distances = {}
+
+actual_distances = np.zeros( (n_sites, n_sites) )
+
+for roads_route in roads_routes:
+    if (roads_route[0][0], roads_route[0][2]) not in door_locations or (roads_route[-1][0], roads_route[-1][2]) not in door_locations:
+        raise err("Incomplete route!?")
+    actual_distances[door_locations.index((roads_route[0][0], roads_route[0][2]))][door_locations.index((roads_route[-1][0], roads_route[-1][2]))] = len(roads_route)
+    actual_distances[door_locations.index((roads_route[-1][0], roads_route[-1][2]))][door_locations.index((roads_route[0][0], roads_route[0][2]))] = len(roads_route)
+
+buildings_available = [building_types.TOWN_HALL, building_types.FACTORY, building_types.SHOP
+                  , building_types.RESTAURANT, building_types.FLATS, building_types.HOUSE
+                  , building_types.HOUSE, building_types.HOUSE, building_types.HOUSE
+                  , building_types.HOUSE]
+locations_availble = list(range(len(buildings_available)))
+
+def recursive_find_building_locations(building_locations: List[Tuple[int, building_types]]
+                           , buildings_available : List[building_types]
+                           , locations_available : List[int]) -> Tuple[int, List[Tuple[int, building_types]]]:
+
+    if len(locations_available) == 1 :
+        building_locations.append((locations_available[0], buildings_available[0]))
+
+        house_location_adresses = []
+        for candidate in building_locations:
+            if candidate[1] == building_types.HOUSE :
+                house_location_adresses.append(candidate[0])
+            elif candidate[1] == building_types.FLATS :
+                flat_address = candidate[0]
+
+        total_distance = 0
+        visits_per_building_type = [0, 2, 5, 3, 0, 1] #[HOUSE,RESTAURANT,FACTORY,SHOP,FLATS,TOWN_HALL]
+        for candidate in building_locations:
+            visit_count = visits_per_building_type[candidate[1].value]
+            
+            for house_address in house_location_adresses:
+                if candidate[0] != house_address :
+                    total_distance += visit_count * actual_distances[candidate[0]][house_address]
+            if candidate[0] != flat_address :
+                total_distance += visit_count * NUMBER_OF_FAMILIES_IN_A_FLAT * actual_distances[candidate[0]][flat_address]
+
+        return total_distance, building_locations
+
+    winning_score = sys.maxsize
+    winning_building_locations = []
+
+    for i in range(len(buildings_available)):
+        if len(locations_available) == 10 :
+            mins, sec = divmod(time.time() - start_bfs, 60)
+            print(f"Find optimum location {100*i/len(buildings_available):.0f}% complete  {mins:.0f}m {sec:.0f}s Winning score: {winning_score}")
+
+        new_buildings_avaiable = buildings_available[:]
+        new_buildings_avaiable.pop(i)
+
+        new_building_locations = building_locations[:]
+        new_building_locations.append((locations_available[0], buildings_available[i]))
+
+        candidate_score, candidate_building_locations = recursive_find_building_locations(
+            new_building_locations, new_buildings_avaiable, locations_available[1:])
+
+        if candidate_score < winning_score :
+            winning_score = candidate_score
+            winning_building_locations = candidate_building_locations
+
+    return winning_score, winning_building_locations
+
+
+total_distance, building_locations = recursive_find_building_locations([], buildings_available, locations_availble)
+print(f"Total distance: {total_distance}")
+print(f"Building locations: {building_locations}")
+
+mins, sec = divmod(time.time() - start_bfs, 60)
+print(f"/n/nTotal Time elapsed BFS: {mins:.0f}m {sec:.0f}s")
+
+a=2
 
 #for road in roads:
 #    roads_routes.append(find_route(locations[road[0]], locations[road[1]]))
