@@ -60,6 +60,7 @@
     <Compile Include="classes\Tile.py" />
     <Compile Include="classes\Timer.py" />
     <Compile Include="classes\Types.py" />
+    <Compile Include="data\roads_routes.py" />
     <Compile Include="main.py" />
     <Compile Include="mainBuilder.py" />
     <Compile Include="vendor\gdmc_http_client\bitarray.py" />

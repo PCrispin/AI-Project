@@ -22,6 +22,12 @@ ROAD_WIDTH = 10
 NUMBER_OF_FAMILIES_IN_A_FLAT = 5
 
 #testing using map data/minecraft_maps/Test 1
+VISITS_PER_BUILDING_TYPE = [0, 2, 5, 3, 0, 1] #[HOUSE,RESTAURANT,FACTORY,SHOP,FLATS,TOWN_HALL]
+
+BUILDINGS_IN_VILLAGE = [building_types.TOWN_HALL, building_types.FACTORY, building_types.SHOP
+                  , building_types.RESTAURANT, building_types.FLATS, building_types.HOUSE
+                  , building_types.HOUSE, building_types.HOUSE, building_types.HOUSE
+                  , building_types.HOUSE]
 
 buildingMaps = buildings()
 builder = Builder()
@@ -72,8 +78,8 @@ for location in locations:
 #to all sites (too much processing time)
 
 n_sites = len(locations)
-number_of_houses = int(n_sites * PERCENTAGE_OF_RESIDENTIAL)
-number_of_functional = n_sites - number_of_houses
+house_count = int(n_sites * PERCENTAGE_OF_RESIDENTIAL)
+number_of_functional = n_sites - house_count
 manhattan_distances = np.zeros( (n_sites, n_sites) )
 avoid_rects = []
 
@@ -140,58 +146,53 @@ actual_distances = np.zeros( (n_sites, n_sites) )
 for roads_route in roads_routes:
     if (roads_route[0][0], roads_route[0][2]) not in door_locations or (roads_route[-1][0], roads_route[-1][2]) not in door_locations:
         raise err("Incomplete route!?")
-    actual_distances[door_locations.index((roads_route[0][0], roads_route[0][2]))][door_locations.index((roads_route[-1][0], roads_route[-1][2]))] = len(roads_route)
-    actual_distances[door_locations.index((roads_route[-1][0], roads_route[-1][2]))][door_locations.index((roads_route[0][0], roads_route[0][2]))] = len(roads_route)
+    ind1 = door_locations.index((roads_route[0][0], roads_route[0][2]))
+    ind2 = door_locations.index((roads_route[-1][0], roads_route[-1][2]))
+    actual_distances[ind1][ind2] = len(roads_route)
+    actual_distances[ind2][ind1] = len(roads_route)
 
-buildings_available = [building_types.TOWN_HALL, building_types.FACTORY, building_types.SHOP
-                  , building_types.RESTAURANT, building_types.FLATS, building_types.HOUSE
-                  , building_types.HOUSE, building_types.HOUSE, building_types.HOUSE
-                  , building_types.HOUSE]
-locations_availble = list(range(len(buildings_available)))
+locations_availble = list(range(len(BUILDINGS_IN_VILLAGE)))
 
-def recursive_find_building_locations(building_locations: List[Tuple[int, building_types]]
-                           , buildings_available : List[building_types]
-                           , locations_available : List[int]) -> Tuple[int, List[Tuple[int, building_types]]]:
+buildings_available_no_houses = list(filter(lambda x: x != building_types.HOUSE, BUILDINGS_IN_VILLAGE))
+no_of_houses = len(BUILDINGS_IN_VILLAGE) - len(buildings_available_no_houses)
 
-    if len(locations_available) == 1 :
-        building_locations.append((locations_available[0], buildings_available[0]))
+chosen_house_locations = []
 
-        house_location_adresses = []
-        for candidate in building_locations:
-            if candidate[1] == building_types.HOUSE :
-                house_location_adresses.append(candidate[0])
-            elif candidate[1] == building_types.FLATS :
-                flat_address = candidate[0]
+class attempt_details():
+    def __init__(self, parent, location_index: int, building: building_types, is_top_node: bool = False):
+        self.parent = parent
+        self.location_index = location_index
+        self.building = building
+        self.is_top_node = is_top_node
 
-        total_distance = 0
-        visits_per_building_type = [0, 2, 5, 3, 0, 1] #[HOUSE,RESTAURANT,FACTORY,SHOP,FLATS,TOWN_HALL]
-        for candidate in building_locations:
-            visit_count = visits_per_building_type[candidate[1].value]
-            
-            for house_address in house_location_adresses:
-                if candidate[0] != house_address :
-                    total_distance += visit_count * actual_distances[candidate[0]][house_address]
-            if candidate[0] != flat_address :
-                total_distance += visit_count * NUMBER_OF_FAMILIES_IN_A_FLAT * actual_distances[candidate[0]][flat_address]
+    @classmethod
+    def get_top_node(cls):
+        return cls(None, -1, building_types.UNKNOWN, True)
 
-        return total_distance, building_locations
+#find places for houses.  This is done first so that the following is not considered separately:
+#{HouseA in Location1, HouseB in Location2} and {HouseB in Location1, HouseA in Location2}
+#Step1 does not distinguish between HouseA and HouseB and so saves processing time
+#If only bfs_step2 was used, this would be considered separately
+def recursive_bfs_step1(  attempt: attempt_details
+                        , house_count: int
+                        , locations_list : List[int]) -> Tuple[int, List[Tuple[int, building_types]]]:
+    if house_count == 0 :
+        return recursive_bfs_step2(attempt, buildings_available_no_houses, locations_list)
 
     winning_score = sys.maxsize
-    winning_building_locations = []
+    available_locations = len(locations_list) - house_count + 1
 
-    for i in range(len(buildings_available)):
-        if len(locations_available) == 10 :
+    for i in range(available_locations) :
+        if house_count == no_of_houses :
             mins, sec = divmod(time.time() - start_bfs, 60)
-            print(f"Find optimum location {100*i/len(buildings_available):.0f}% complete  {mins:.0f}m {sec:.0f}s Winning score: {winning_score}")
+            print(f"Find optimum location {100*i/available_locations:.0f}% complete  {mins:.0f}m {sec:.0f}s Winning score: {winning_score}")
 
-        new_buildings_avaiable = buildings_available[:]
-        new_buildings_avaiable.pop(i)
+        location = locations_list.pop(i)
 
-        new_building_locations = building_locations[:]
-        new_building_locations.append((locations_available[0], buildings_available[i]))
+        candidate_score, candidate_building_locations = recursive_bfs_step1(
+              attempt_details(attempt, location, building_types.HOUSE), house_count - 1, locations_list)
 
-        candidate_score, candidate_building_locations = recursive_find_building_locations(
-            new_building_locations, new_buildings_avaiable, locations_available[1:])
+        locations_list.insert(i, location)
 
         if candidate_score < winning_score :
             winning_score = candidate_score
@@ -200,7 +201,59 @@ def recursive_find_building_locations(building_locations: List[Tuple[int, buildi
     return winning_score, winning_building_locations
 
 
-total_distance, building_locations = recursive_find_building_locations([], buildings_available, locations_availble)
+def recursive_bfs_step2(     attempt: attempt_details
+                           , buildings_list : List[building_types]
+                           , locations_list : List[int]) -> Tuple[int, List[Tuple[int, building_types]]]:
+
+    if len(locations_list) == 0 :
+        
+        function_building_locations = []
+        house_location_adresses = []
+        building_locations = []
+        while not attempt.is_top_node:
+            building_locations.append((attempt.location_index, attempt.building))
+            if attempt.building == building_types.HOUSE :
+                house_location_adresses.append(attempt.location_index)
+            elif attempt.building == building_types.FLATS :
+                flat_address = attempt.location_index
+            else:
+                function_building_locations.append((attempt.location_index, attempt.building))
+            attempt = attempt.parent
+
+        total_distance = 0
+        for candidate_address, candidate_building in function_building_locations:
+            visit_count = VISITS_PER_BUILDING_TYPE[candidate_building.value]
+            
+            for house_address in house_location_adresses:
+                total_distance += visit_count * actual_distances[candidate_address][house_address]
+            total_distance += visit_count * NUMBER_OF_FAMILIES_IN_A_FLAT * actual_distances[candidate_address][flat_address]
+
+        return total_distance, building_locations
+
+    winning_score = sys.maxsize
+    winning_building_locations = []
+
+    location = locations_list.pop(0)
+
+    for i in range(len(buildings_list)):
+
+        building = buildings_list.pop(i)
+
+        candidate_score, candidate_building_locations = recursive_bfs_step2(
+              attempt_details(attempt, location, building), buildings_list, locations_list)
+
+        buildings_list.insert(1, building)
+
+        if candidate_score < winning_score :
+            winning_score = candidate_score
+            winning_building_locations = candidate_building_locations
+
+    locations_list.insert(0, location)
+
+    return winning_score, winning_building_locations
+
+total_distance, building_locations = recursive_bfs_step1(attempt_details.get_top_node(), no_of_houses, locations_availble)
+
 print(f"Total distance: {total_distance}")
 print(f"Building locations: {building_locations}")
 
