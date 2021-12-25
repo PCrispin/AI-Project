@@ -4,10 +4,10 @@
         graph: graph object containg information about
         the search space
     """
-import statistics
+
 from typing import Iterator
 import numpy as np
-from classes.ENUMS.block_codes import block_codes
+from classes.ENUMS.block_codes import water_block_codes
 from classes.Types import GridLocation, TileMap
 from classes.misc_functions import get_build_coord
 import numpy as np
@@ -32,10 +32,9 @@ class graph:
 
     def create_tile_lists(self):
         """Loops through tile map and adds water tiles to list"""
-
         for x_value in range(self.x):
             for z_value in range(self.z):
-                if self.tile_map[x_value][z_value].material == block_codes.WATER.value:
+                if self.tile_map[x_value][z_value].material == 1:
                     self.water_tiles.append((x_value, z_value))
 
     def print_graph(self, show_z_index=False):
@@ -192,56 +191,91 @@ class graph:
 
     #     return int(statistics.mean(y_indexes))
 
-    def visualise(self, autonormalize=True):
+    def visualise(self, autonormalize=True, building_radius=3, fitness="water"):
         """Creates plots to visualise the fitness map."""
-        building_radius = 1
 
-        water_fitness_map = []
-        flatness_fitness_map = []
+        if fitness == "water":
+            water_boolean = []
+            for x_value in range(0, self.x):
+                z_waters = []
+            for z_value in range(0, self.z):
+                if self.tile_map[x_value][z_value].material == 1:
+                    z_waters.append(1)
+                else:
+                    z_waters.append(0)
+            water_boolean.append(z_waters)
+            w_b_m = np.array(water_boolean)
+            show_plot(w_b_m)
+        # water_fitness_map = []
+        # flatness_fitness_map = []
 
-        # calculate the maximum water distance for all tiles
+        # # calculate the maximum water distance for all tiles
 
-        for x_value in range(building_radius, self.x - building_radius):
-            z_waters = []
-            z_flatness = []
-            for z_value in range(building_radius, self.z - building_radius):
-                z_waters.append(
-                    calculate_distance_fitness_from_water(
-                        location=(x_value, z_value),
-                        graph_representation=self,
-                        building_radius=building_radius,
-                    )
-                )
-                z_flatness.append(
-                    calculate_flatness_fitness(
-                        location=(x_value, z_value),
-                        graph_representation=self,
-                        building_radius=building_radius,
-                    )
-                )
-            water_fitness_map.append(z_waters)
-            flatness_fitness_map.append(z_flatness)
-        w_f_m = np.array(water_fitness_map)
-        f_f_m = np.array(flatness_fitness_map)
+        # for x_value in range(building_radius, self.x - building_radius):
+        #     z_waters = []
+        #     z_flatness = []
+        #     for z_value in range(building_radius, self.z - building_radius):
+        #         z_waters.append(flood_fill_search((x_value, z_value), self))
+        #         z_flatness.append(
+        #             calculate_flatness_fitness(
+        #                 location=(x_value, z_value),
+        #                 graph_representation=self,
+        #                 building_radius=building_radius,
+        #             )
+        #         )
+        #     water_fitness_map.append(z_waters)
+        #     flatness_fitness_map.append(z_flatness)
 
-        if autonormalize:
-            f_f_m = scale(f_f_m, 0, 1)
-            w_f_m = scale(w_f_m, 0, 1)
+        # w_f_m = np.array(water_fitness_map)
+        # # f_f_m = np.array(flatness_fitness_map)
 
-        a_f_m = np.add(f_f_m, w_f_m)
+        # # if autonormalize:
+        # #     # f_f_m = scale(f_f_m, 0, 1)
+        # #     w_f_m = scale(w_f_m, 0, 1)
 
-        show_plot(f_f_m)
-        show_plot(w_f_m)
-        show_plot(a_f_m)
+        # # a_f_m = np.add(f_f_m, w_f_m)
 
-    def neighbors(self, id: GridLocation) -> Iterator[GridLocation]:
-        (x, y) = id
-        neighbors = [(x + 1, y), (x - 1, y), (x, y - 1), (x, y + 1)]  # E W N S
-        # see "Ugly paths" section for an explanation:
-        if (x + y) % 2 == 0:
-            neighbors.reverse()  # S N W E
-        results = filter(self.in_bounds_boolean, neighbors)
-        return results
+        # # show_plot(f_f_m)
+        # show_plot(w_f_m)
+        # # show_plot(a_f_m)
+
+
+def flood_fill_search(location, g: graph):
+    check_vertexes = []
+    build_locations = list(
+        filter(
+            g.in_bounds_boolean,
+            get_build_coord(location=location, building_radius=3),
+        )
+    )
+
+    if any(x in build_locations for x in g.water_tiles):
+        return MAXIMUM_DISTANCE_PENALTY
+
+    start_vertex = (
+        location[0] - int(WATER_SEARCH_RADIUS / 2),
+        location[1] - int(WATER_SEARCH_RADIUS / 2),
+    )
+
+    for width in range(0, WATER_SEARCH_RADIUS):
+        for height in range(0, WATER_SEARCH_RADIUS):
+            check_vertexes.append((start_vertex[0] + width, start_vertex[1] + height))
+
+    search_vertexs = list(filter(g.in_bounds_boolean, check_vertexes))
+
+    if any(x in search_vertexs for x in g.water_tiles):
+        water_tiles_in_search_radius = list(
+            set(search_vertexs).intersection(g.water_tiles)
+        )
+
+        distances = {}
+        for tile in water_tiles_in_search_radius:
+            distances[tile] = manhattan(tile, location)
+        closest_distance_vector = min(distances, key=distances.get)
+        closest_distance_value = distances[closest_distance_vector]
+        return closest_distance_value
+    else:
+        return MAXIMUM_DISTANCE_PENALTY
 
 
 def calculate_flatness_fitness(
