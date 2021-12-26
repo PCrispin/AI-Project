@@ -60,7 +60,6 @@ def generate_building_location_through_genetic_algorithm(
 
 
 if __name__ == "__main__":
-    g_start = get_world_state(area=AREA)
-    g_start.visualise()
+    g_start = get_world_state(paint_fence=True, area=AREA)
     buildings = run_epochs(g_start)
     buildings.paint_buildings()

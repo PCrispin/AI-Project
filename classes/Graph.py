@@ -4,16 +4,17 @@
         graph: graph object containg information about
         the search space
     """
-
-from typing import Iterator
 import numpy as np
-from classes.ENUMS.block_codes import water_block_codes
 from classes.Types import GridLocation, TileMap
 from classes.misc_functions import get_build_coord
-import numpy as np
 import matplotlib.pyplot as plt
 
-from constants import MAXIMUM_DISTANCE_PENALTY, WATER_SEARCH_RADIUS
+from constants import (
+    IMAGE_DIR_FOLD,
+    MAX_BUILDING_RADIUS,
+    MAXIMUM_DISTANCE_PENALTY,
+    WATER_SEARCH_RADIUS,
+)
 
 
 class graph:
@@ -90,14 +91,13 @@ class graph:
         else:
             return False
 
-    def calcuate_water_distance_experimental(self, location):
-        build_locations = list(
-            filter(
-                self.in_bounds_boolean,
-                get_build_coord(location=location, building_radius=3),
-            )
+    def calcuate_water_distance(self, location, building_radius):
+
+        PENALTY = self._calculate_penalty(
+            location=location, building_radius=building_radius
         )
-        if any(x in build_locations for x in self.water_tiles):
+
+        if PENALTY:
             return MAXIMUM_DISTANCE_PENALTY
 
         start_vertex = (
@@ -105,7 +105,6 @@ class graph:
             location[1] - int(WATER_SEARCH_RADIUS / 2),
         )
 
-        # otherwise calculate if its near water
         check_vertexes = []
         for width in range(0, WATER_SEARCH_RADIUS):
             for height in range(0, WATER_SEARCH_RADIUS):
@@ -130,23 +129,9 @@ class graph:
         else:
             return MAXIMUM_DISTANCE_PENALTY
 
-    def calculate_distance_from_water_vectors(self, location: GridLocation) -> float:
-
-        """Calculates the average manhattan distance for a location from all water vectors
-
-        Args:
-            location (GridLocation): [description]
-
-        Returns:
-            Float: [description]
-        """
-        cum_distance = 0
-        for water_location in self.water_tiles:
-            cum_distance += manhattan(water_location, location)
-        total_water_vectors = len(self.water_tiles)
-        return cum_distance / total_water_vectors
-
-    def calculate_distance_from_houses(self, location: GridLocation) -> float:
+    def calculate_distance_from_houses(
+        self, location: GridLocation, building_radius=MAX_BUILDING_RADIUS
+    ) -> float:
         """Calculates the average manhattan distance for a location from all house vectors
 
         Args:
@@ -155,13 +140,35 @@ class graph:
         Returns:
             Float: [description]
         """
+
+        PENALTY = self._calculate_penalty(
+            location=location, building_radius=building_radius
+        )
+
+        if PENALTY:
+            return MAXIMUM_DISTANCE_PENALTY
+
         cum_distance = 0
         for building_location in self.building_tiles:
             cum_distance += manhattan(building_location, location)
         total_build_vectors = len(self.building_tiles)
         return cum_distance / total_build_vectors
 
-    def calculate_flatness_from_location(self, build_list: list) -> float:
+    def _calculate_penalty(self, location, building_radius):
+        build_locations = list(
+            filter(
+                self.in_bounds_boolean,
+                get_build_coord(location=location, building_radius=building_radius),
+            )
+        )
+
+        if any(x in build_locations for x in self.water_tiles or self.building_tiles):
+            return True
+        return False
+
+    def calculate_flatness_from_location(
+        self, location: GridLocation, building_radius: int
+    ) -> float:
         """Return fitness value from a location based on fitness of
            the proposed location using standard deviation
 
@@ -171,111 +178,81 @@ class graph:
         Returns:
             float: build fitness
         """
+        PENALTY = self._calculate_penalty(
+            location=location, building_radius=building_radius
+        )
+
+        if PENALTY:
+            return MAXIMUM_DISTANCE_PENALTY
+
+        build_locations = list(
+            filter(
+                self.in_bounds_boolean,
+                get_build_coord(location=location, building_radius=building_radius),
+            )
+        )
+
         z_indexes = []
-        for tile in build_list:
+        for tile in build_locations:
             z_indexes.append(self.tile_map[tile[0], tile[1]].z)
         return np.std(z_indexes)
 
-    # def calculate_ideal_y_plane(self, build_list: list) -> int:
-    #     """Return ideal y plane for building location
-
-    #     Args:
-    #         build_list (list): blocks used to build location
-
-    #     Returns:
-    #         int: [description]
-    #     """
-    #     y_indexes = []
-    #     for tile in build_list:
-    #         y_indexes.append(self.tile_map[tile[0], tile[1]].z)
-
-    #     return int(statistics.mean(y_indexes))
-
-    def visualise(self, autonormalize=True, building_radius=3, fitness="water"):
+    def visualise(
+        self, autonormalize=True, building_radius=MAX_BUILDING_RADIUS, fitness="water"
+    ):
         """Creates plots to visualise the fitness map."""
 
         if fitness == "water":
             water_boolean = []
             for x_value in range(0, self.x):
                 z_waters = []
-            for z_value in range(0, self.z):
-                if self.tile_map[x_value][z_value].material == 1:
-                    z_waters.append(1)
-                else:
-                    z_waters.append(0)
-            water_boolean.append(z_waters)
+                for z_value in range(0, self.z):
+                    if self.tile_map[x_value][z_value].material == 1:
+                        z_waters.append(1)
+                    else:
+                        z_waters.append(0)
+                water_boolean.append(z_waters)
             w_b_m = np.array(water_boolean)
+            if autonormalize:
+                w_b_m = scale(w_b_m, 0, 1)
             show_plot(w_b_m)
-        # water_fitness_map = []
-        # flatness_fitness_map = []
+            show_2d_heatmap(w_b_m, "water_boolean")
 
-        # # calculate the maximum water distance for all tiles
+        if fitness == "water_distance":
+            water_fitness_map = []
+            for x_value in range(building_radius, self.x - building_radius):
+                z_waters = []
+                for z_value in range(building_radius, self.z - building_radius):
+                    z_waters.append(
+                        self.calcuate_water_distance(
+                            (x_value, z_value), building_radius=building_radius
+                        )
+                    )
+            water_fitness_map.append(z_waters)
+            w_f_m = np.array(water_fitness_map)
+            if autonormalize:
+                w_f_m = scale(w_f_m, 0, 1)
+            show_plot(w_f_m)
+            show_2d_heatmap(w_f_m, "water_fitness")
 
-        # for x_value in range(building_radius, self.x - building_radius):
-        #     z_waters = []
-        #     z_flatness = []
-        #     for z_value in range(building_radius, self.z - building_radius):
-        #         z_waters.append(flood_fill_search((x_value, z_value), self))
-        #         z_flatness.append(
-        #             calculate_flatness_fitness(
-        #                 location=(x_value, z_value),
-        #                 graph_representation=self,
-        #                 building_radius=building_radius,
-        #             )
-        #         )
-        #     water_fitness_map.append(z_waters)
-        #     flatness_fitness_map.append(z_flatness)
-
-        # w_f_m = np.array(water_fitness_map)
-        # # f_f_m = np.array(flatness_fitness_map)
-
-        # # if autonormalize:
-        # #     # f_f_m = scale(f_f_m, 0, 1)
-        # #     w_f_m = scale(w_f_m, 0, 1)
-
-        # # a_f_m = np.add(f_f_m, w_f_m)
-
-        # # show_plot(f_f_m)
-        # show_plot(w_f_m)
-        # # show_plot(a_f_m)
-
-
-def flood_fill_search(location, g: graph):
-    check_vertexes = []
-    build_locations = list(
-        filter(
-            g.in_bounds_boolean,
-            get_build_coord(location=location, building_radius=3),
-        )
-    )
-
-    if any(x in build_locations for x in g.water_tiles):
-        return MAXIMUM_DISTANCE_PENALTY
-
-    start_vertex = (
-        location[0] - int(WATER_SEARCH_RADIUS / 2),
-        location[1] - int(WATER_SEARCH_RADIUS / 2),
-    )
-
-    for width in range(0, WATER_SEARCH_RADIUS):
-        for height in range(0, WATER_SEARCH_RADIUS):
-            check_vertexes.append((start_vertex[0] + width, start_vertex[1] + height))
-
-    search_vertexs = list(filter(g.in_bounds_boolean, check_vertexes))
-
-    if any(x in search_vertexs for x in g.water_tiles):
-        water_tiles_in_search_radius = list(
-            set(search_vertexs).intersection(g.water_tiles)
-        )
-
-        distances = {}
-        for tile in water_tiles_in_search_radius:
-            distances[tile] = manhattan(tile, location)
-        closest_distance_vector = min(distances, key=distances.get)
-        closest_distance_value = distances[closest_distance_vector]
-        return closest_distance_value
-    else:
-        return MAXIMUM_DISTANCE_PENALTY
+        if fitness == "flatness":
+            flatness_fitness_map = []
+            for x_value in range(building_radius, self.x - building_radius):
+                y_flatness = []
+                for z_value in range(building_radius, self.z - building_radius):
+                    y_flatness.append(
+                        calculate_flatness_fitness(
+                            location=(x_value, z_value),
+                            graph_representation=self,
+                            building_radius=building_radius,
+                        )
+                    )
+            flatness_fitness_map.append(y_flatness)
+            f_f_m = np.array(flatness_fitness_map)
+            if autonormalize:
+                f_f_m = scale(f_f_m, 0, 1)
+            show_plot(f_f_m)
+            show_2d_heatmap(f_f_m, "flatness_fitness")
 
 
 def calculate_flatness_fitness(
@@ -359,3 +336,17 @@ def show_plot(m):
     ax.set_zlabel("Z (values)")
 
     plt.show()
+
+
+def show_2d_heatmap(arr: np.array, filename: str):
+    arr = arr.T  # transpose x and z axis
+    heatmap, ax = plt.subplots()
+    im = ax.imshow(
+        arr,
+        cmap=plt.cm.coolwarm,
+        interpolation="nearest",
+        origin="lower",
+        aspect="auto",
+    )
+    ax.set(xlabel="Z coordinate", ylabel="X coordinate")
+    heatmap.savefig(IMAGE_DIR_FOLD + "/" + filename + ".png")

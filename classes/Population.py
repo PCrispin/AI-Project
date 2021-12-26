@@ -8,11 +8,7 @@ from operator import attrgetter
 from numpy import random
 import numpy as np
 from scipy.stats import multivariate_normal
-from classes.Graph import (
-    calculate_flatness_fitness,
-    calculate_house_distance_fitness,
-    graph,
-)
+from classes.Graph import graph
 
 from classes.Location_Genome import LocationGenome
 from classes.Timer import Timer
@@ -20,6 +16,7 @@ from classes.misc_functions import get_build_coord
 from sklearn.preprocessing import minmax_scale
 
 from constants import (
+    BUILDING_DISTANCE_WEIGHTING,
     DEFAULT_MUTATION_RATE,
     DEFAULT_POPULATION_SIZE,
     MAX_BUILDING_RADIUS,
@@ -32,12 +29,7 @@ class Population:
 
     @Timer(text="Population Generated in {:.2f} seconds")
     def __init__(
-        self,
-        g_repesentation: graph,
-        p_size=DEFAULT_POPULATION_SIZE,
-        init_random=False,
-        fitness_water_distance=True,
-        fitness_building_location=False,
+        self, g_repesentation: graph, p_size=DEFAULT_POPULATION_SIZE, init_random=False
     ):
         self.p_size = p_size
         self.members = []
@@ -119,21 +111,62 @@ class Population:
         """Calculates the population fitness"""
 
         water_distance_fitness = []
+        building_distance_fitness = []
+        flatness_fitness = []
         if len(self.graph.water_tiles) != 0:
             for member in self.members:
                 if len(self.graph.water_tiles) != 0:
-                    water_fitness = self.graph.calcuate_water_distance_experimental(
-                        location=(member.x, member.z)
+                    water_fitness = self.graph.calcuate_water_distance(
+                        location=(member.x, member.z),
+                        building_radius=member.building_radius,
                     )
                     member.water_distance_fitness = water_fitness
                     water_distance_fitness.append(water_fitness)
+
+        if len(self.graph.building_tiles) != 0:
+            for member in self.members:
+                distance_fitness = self.graph.calculate_distance_from_houses(
+                    location=(member.x, member.z),
+                    building_radius=member.building_radius,
+                )
+                member.water_distance_fitness = distance_fitness
+                building_distance_fitness.append(distance_fitness)
+
+        for member in self.members:
+            flatness = self.graph.calculate_flatness_from_location(
+                location=(member.x, member.z), building_radius=member.building_radius
+            )
+            member.flatness_fintess = flatness
+            flatness_fitness.append(flatness)
+
+        if len(water_distance_fitness) != 0:
             water_distance_fitness = minmax_scale(
                 water_distance_fitness, feature_range=(1, 2), axis=0
             )
-            for i in range(len(self.members)):
-                self.members[i].fitness += water_distance_fitness[i] * 2
-                if self.members[i].fitness == 0:
-                    print("yikes")
+
+        if len(building_distance_fitness) != 0:
+            building_distance_fitness = minmax_scale(
+                building_distance_fitness, feature_range=(1, 2), axis=0
+            )
+
+        if len(flatness_fitness) != 0:
+            flatness_fitness = minmax_scale(
+                flatness_fitness, feature_range=(1, 2), axis=0
+            )
+
+        for i in range(len(self.members)):
+            if len(self.graph.water_tiles) != 0:
+                self.members[i].fitness += water_distance_fitness[i]
+            if len(self.graph.building_tiles) != 0:
+                self.members[i].fitness += (
+                    building_distance_fitness[i] / BUILDING_DISTANCE_WEIGHTING
+                )
+            if len(flatness_fitness) != 0:
+                self.members[i].fitness += flatness_fitness[i]
+            if self.members[i].fitness == 0:
+                raise ValueError(
+                    "Population member has ZERO fitness - this should not happen"
+                )
 
     def _clear_population_fitness_values(self):
         """Clears all population fitness values"""
