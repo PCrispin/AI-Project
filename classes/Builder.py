@@ -1,14 +1,26 @@
 from csv import reader
-import sys
+from sys import maxsize 
+from typing import Tuple, List
+import random
+import time
 from classes.ENUMS.orientations import orientations
 from classes.ENUMS.block_codes import block_codes
+from classes.ENUMS.building_types import building_types
 from vendor.gdmc_http_client.interfaceUtils import placeBlockBatched, sendBlocks, runCommand
 from vendor.gdmc_http_client.worldLoader import WorldSlice
+from constants import BLOCK_BATCH_SIZE
+from classes.AStar import create_roads
+from classes.Bool_map import bool_map
 from classes.Building_site import building_site
 from classes.Building import building
-from typing import Tuple
+from classes.Buildings import buildings
 
 #TODO: This is a flat file!  Make into a proper class...
+
+GRID_WIDTH = 15
+NUMBER_OF_FAMILIES_IN_A_FLAT = 5
+DRIVE_LENGTH = 2
+BUILDING_MARGIN = 3
 
 class Builder:
     """Builds Buildings!"""
@@ -34,7 +46,6 @@ class Builder:
         MAX_HEIGHT = 255
         MIN_HEIGHT = 0
         MAX_WIDTH_OF_TREE = 10
-        BLOCK_BATCH_SIZE = 1000
         WATER_CODES = [block_codes.WATER, block_codes.FLOWING_WATER, block_codes.ICE
                        , block_codes.PACKED_ICE, block_codes.BLUE_ICE, block_codes.FROSTED_ICE]
 
@@ -49,8 +60,8 @@ class Builder:
 
         def findHeightInRegion(x1: int, z1: int, x2: int, z2: int) :#-> tuple[int, int, bool]:
             chopped = []
-            maxY = -sys.maxsize
-            minY = sys.maxsize
+            maxY = -maxsize
+            minY = maxsize
 
             smallX, bigX = min(x1, x2), max(x1, x2)
 
@@ -216,3 +227,42 @@ class Builder:
             return self.sites[-1]
         else:
             return None
+
+    def create_village(self
+                       , locations: List[Tuple[int, int]]
+                       , building_location_types: List[Tuple[int, building_types]]
+                       , facing_directions: List[orientations]
+                       , building_radii: List[int]):
+        building_maps = buildings()
+
+        for building_location_type in building_location_types:
+            location_index = building_location_type[0]
+            building_type = building_location_type[1]
+            diameter = building_radii[location_index] * 2
+
+            structure = building_maps.getBiggestByTypeAndSize(building_type, diameter, diameter)
+            if structure is not None:
+                self.create(locations[location_index][0], locations[location_index][1], facing_directions[location_index], structure)
+
+    @classmethod
+    def analyze_and_create(cls, locations: List[int], building_radii: List[int]) :
+        start = time.time()
+
+        builder = cls()
+
+        areas, world_map, world_slice = bool_map.create(locations, building_radii, BUILDING_MARGIN)
+
+        #Find required coordinates
+        facing_directions, door_locations, roads = building_site.get_locations(locations, building_radii, world_map, DRIVE_LENGTH)
+
+        #A* search from every door location to every other door location
+        distances = create_roads(roads, GRID_WIDTH, door_locations, world_map, world_slice)
+          
+        #bfs search for which building type in which location
+        building_location_types = building_site.calc_building_types(distances, NUMBER_OF_FAMILIES_IN_A_FLAT)
+
+        #Build the buildings
+        builder.create_village(locations, building_location_types, facing_directions, building_radii)
+
+        mins, sec = divmod(time.time() - start, 60)
+        print(f"\n\nComplete in: {mins:.0f}m {sec:.0f}s")

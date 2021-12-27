@@ -1,11 +1,16 @@
+from sys import maxsize 
 from vendor.gdmc_http_client.worldLoader import WorldSlice
 from typing import List, Tuple
+from constants import MAX_DETOUR, DEBUG_DRAW_WORKINGS, BLOCK_BATCH_SIZE
+from classes.ENUMS.block_codes import block_codes
+from vendor.gdmc_http_client.interfaceUtils import placeBlockBatched, sendBlocks
 
 class bool_map():
     class tile_info():
         def __init__(self):
             self.avoid = False
-            self.penalty = False
+            self.avoid_water = False
+            self.is_near_obstacle = False
             self.has_road = False
             self.already_goes_to = {}
 
@@ -36,6 +41,7 @@ class bool_map():
                     j_m = world_slice.rect[1] + j - self.minZ
                     i_m = world_slice.rect[0] + i - self.minX
                     if 0 <= i_m < self.width and 0 <= j_m < self.depth :
+                        self.matrix[i_m][j_m].avoid_water = True
                         self.matrix[i_m][j_m].avoid = True
 
         changes = []
@@ -56,13 +62,55 @@ class bool_map():
                             changes.append((i,j))
                             break
         for change in changes:
-            self.matrix[change[0]][change[1]].penalty = True
+            self.matrix[change[0]][change[1]].is_near_obstacle = True
+
+    @classmethod
+    def create(  cls, centers: List[Tuple[int, int]], radii: List[int], margin_width: int
+                    ) -> Tuple[ List[Tuple[int,int,int,int]], 'bool_map', WorldSlice] :
+
+        areas_min_x, areas_min_z = maxsize, maxsize
+        areas_max_x, areas_max_z = -maxsize, -maxsize
+
+        site_areas = []
+        for location_index in range(len(centers)):
+            radius = radii[location_index]
+            center = centers[location_index]
+
+            site_area = (center[0] - radius, center[1] - radius, center[0] + radius, center[1] + radius)
+
+            site_areas.append(site_area)
+
+            areas_min_x, areas_min_z = min(areas_min_x, site_area[0]), min(areas_min_z, site_area[1])
+            areas_max_x, areas_max_z = max(areas_max_x, site_area[2]), max(areas_max_z, site_area[3])
+
+        map_area = (   areas_min_x - MAX_DETOUR, areas_min_z - MAX_DETOUR
+                     , areas_max_x - areas_min_x + 2 * MAX_DETOUR
+                     , areas_max_z - areas_min_z + 2 * MAX_DETOUR)
+
+        world_slice = WorldSlice(map_area)
+        world_map = bool_map(map_area, site_areas, margin_width, world_slice)
+
+        if DEBUG_DRAW_WORKINGS :
+            for rect in site_areas:
+                for rect_x in range(rect[0], rect[2]):
+                    for rect_z in range(rect[1], rect[3]):
+                        rect_y = world_slice.heightmaps['MOTION_BLOCKING_NO_LEAVES'][rect_x-world_slice.rect[0]][rect_z-world_slice.rect[1]]
+                        placeBlockBatched(rect_x, rect_y - 1, rect_z, block_codes.WHITE_TERRACOTTA.value, BLOCK_BATCH_SIZE)
+            sendBlocks()
+
+        return map_area, world_map, world_slice
 
     def get_avoid_value(self, x: int, z: int) -> bool:
         return self.matrix[x - self.minX][z - self.minZ].avoid
 
-    def get_penalty_value(self, x: int, z: int) -> bool:
-        return self.matrix[x - self.minX][z - self.minZ].penalty
+    def get_avoid_water_value(self, x: int, z: int) -> bool:
+        return self.matrix[x - self.minX][z - self.minZ].avoid_water
+
+    def get_avoid_building_value(self, x: int, z: int) -> bool:
+        return self.matrix[x - self.minX][z - self.minZ].avoid and not self.matrix[x - self.minX][z - self.minZ].avoid_water
+
+    def get_is_near_obstacle(self, x: int, z: int) -> bool:
+        return self.matrix[x - self.minX][z - self.minZ].is_near_obstacle
 
     def get_has_road_value(self, x: int, z: int) -> bool:
         return self.matrix[x - self.minX][z - self.minZ].has_road

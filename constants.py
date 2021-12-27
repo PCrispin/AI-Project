@@ -16,3 +16,10 @@ WATER_SEARCH_RADIUS = (
     MAX_BUILDING_RADIUS * 4
 )  # How far to search from building location for water, should be larger than MAX_BUILDING_RADIUS
 MAXIMUM_DISTANCE_PENALTY = AREA[3] / 2
+
+
+
+DEBUG_DRAW_WORKINGS: bool = False  #yellow/orange-first in frontier, light blue-candidate, NOT_POSSIBLE: Gray-drop or black
+MAX_DETOUR:int = 110
+VISITS_PER_BUILDING_TYPE = [0, 2, 5, 3, 0, 1] #[HOUSE,RESTAURANT,FACTORY,SHOP,FLATS,TOWN_HALL]
+BLOCK_BATCH_SIZE = 1000
