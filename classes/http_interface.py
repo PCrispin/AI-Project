@@ -1,14 +1,17 @@
 """Functions to interact with the the HTTP interface"""
 
 import numpy as np
+from classes.ENUMS.block_codes import block_codes, water_block_codes
 
 from classes.Tile import Tile
 from classes.Graph import graph
+from classes.Timer import Timer
 from vendor.gdmc_http_client.interfaceUtils import setBlock
 from vendor.gdmc_http_client.worldLoader import WorldSlice
 import vendor.gdmc_http_client.mapUtils
 
 
+@Timer(text="Get World State: {:0.8f} seconds")
 def get_world_state(paint_fence=False, area=(0, 0, 100, 60)) -> graph:
     """Get the world state in a graph representation
 
@@ -23,6 +26,7 @@ def get_world_state(paint_fence=False, area=(0, 0, 100, 60)) -> graph:
     """
     world_slice = WorldSlice(area)
     block_map, height_map = get_material_and_height_map(world_slice=world_slice)
+
     if paint_fence:
         vendor.gdmc_http_client.mapUtils.paint_fence(
             worldSlice=world_slice, heightmap=height_map
@@ -61,7 +65,7 @@ def calc_input_space(block_map: np.ndarray, height_map: np.ndarray) -> np.ndarra
 
 def calc_good_heightmap(world_slice) -> np.ndarray:
     """Calculates a heightmap ideal for building.
-    Trees are ignored and water is considered ground.
+
 
     Args:
         worldSlice (WorldSlice): an instance of the WorldSlice class
@@ -107,6 +111,10 @@ def calculate_block_map(world_slice) -> np.ndarray:
         for z_value in range(area[3]):
             y_value = height_map[x_value][z_value]
             material = world_slice.getBlockAt((x_value, y_value - 1, z_value))
+            if material in water_block_codes.list():
+                material = 1
+            else:
+                material = 0
             block_row.append(material)
         block_map.append(block_row)
     return np.array(block_map)
