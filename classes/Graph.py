@@ -6,8 +6,9 @@
     """
 import numpy as np
 from classes.Types import GridLocation, TileMap
-from classes.misc_functions import get_build_coord
+from classes.misc_functions import get_build_coord, rectangles_overlap, cut_out_bounds
 import matplotlib.pyplot as plt
+from typing import List, Tuple
 
 from constants import (
     IMAGE_DIR_FOLD,
@@ -26,9 +27,10 @@ class graph:
     ):
         self.x: int = len(tile_map)
         self.z: int = len(tile_map[0])
-        self.tile_map = tile_map
+        self.tile_map : TileMap = tile_map
         self.water_tiles: list = []
         self.building_tiles: list = []
+        self.buildings_coords : List[Tuple[int,int,int,int]] = []
         self.create_tile_lists()
 
     def create_tile_lists(self):
@@ -100,6 +102,32 @@ class graph:
         if PENALTY:
             return MAXIMUM_DISTANCE_PENALTY
 
+        radius = WATER_SEARCH_RADIUS // 2
+
+        grid = (
+            cut_out_bounds(location[0] - radius, self.x),
+            cut_out_bounds(location[1] - radius, self.z),
+            cut_out_bounds(location[0] + radius, self.x),
+            cut_out_bounds(location[1] + radius, self.z)   
+            )
+
+        min_distance = self.tile_map[grid[0]][grid[1]].manhattan_distance_to_water
+
+        for x_value in range(grid[0], grid[2]):
+            for z_value in range(grid[1], grid[3]):
+                min_distance = min(min_distance, self.tile_map[x_value][z_value].manhattan_distance_to_water)
+
+        return min_distance
+
+    def calcuate_water_distance_orig(self, location, building_radius):
+
+        PENALTY = self._calculate_penalty(
+            location=location, building_radius=building_radius
+        )
+
+        if PENALTY:
+            return MAXIMUM_DISTANCE_PENALTY
+
         start_vertex = (
             location[0] - int(WATER_SEARCH_RADIUS / 2),
             location[1] - int(WATER_SEARCH_RADIUS / 2),
@@ -155,6 +183,25 @@ class graph:
         return cum_distance / total_build_vectors
 
     def _calculate_penalty(self, location, building_radius):
+        coords = (
+              cut_out_bounds(location[0] - building_radius, self.x)
+            , cut_out_bounds(location[1] - building_radius, self.z)
+            , cut_out_bounds(location[0] + building_radius, self.x)
+            , cut_out_bounds(location[1] + building_radius, self.z)
+            )
+
+        for building_coords in self.buildings_coords:
+            if rectangles_overlap(coords, building_coords):
+                return True
+
+        for x_value in range(coords[0], coords[2]):
+            for z_value in range(coords[1], coords[3]):
+                if self.tile_map[x_value][z_value].manhattan_distance_to_water == 0:
+                    return True
+
+        return False
+
+    def _calculate_penalty_orig(self, location, building_radius):
         build_locations = list(
             filter(
                 self.in_bounds_boolean,

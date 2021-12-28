@@ -6,6 +6,14 @@ class ExtendedEnum(Enum):
     def list(cls):
         return list(map(lambda c: c.value, cls))
 
+    
+class water_block_codes(ExtendedEnum):
+    WATER = "minecraft:water"
+    FLOWING_WATER = "minecraft:flowing_water"
+    ICE = "minecraft:ice"
+    PACKED_ICE = "minecraft:packed_ice"
+    BLUE_ICE = "minecraft:blue_ice"
+    FROSTED_ICE = "minecraft:frosted_ice"
 
 class block_codes(ExtendedEnum):
     """Master list of all block codes
@@ -45,6 +53,7 @@ class block_codes(ExtendedEnum):
     RED_TERRACOTTA =  "minecraft:red_terracotta"
     IRON_BARS = "minecraft:iron_bars"
     TORCH = "minecraft:torch"
+
 
     # *** ALL BLOCKS IN MINECRAFT ***
 

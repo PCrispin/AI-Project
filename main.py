@@ -12,6 +12,7 @@ from classes.http_interface import get_world_state
 from classes.Location_Genome import LocationGenome
 from classes.Population import Population
 from constants import AREA, BUILDING_NUMBER, GENERATIONS, POPULATION_SIZE
+import time
 
 
 def run_epochs(g_representation: graph) -> BuildingLocations:
@@ -31,6 +32,7 @@ def run_epochs(g_representation: graph) -> BuildingLocations:
         )
         locations.add_building(fitess)
         g_representation.building_tiles.extend(locations.locations[-1].build_locations)
+        g_representation.buildings_coords.append(locations.locations[-1].build_coordinates)
     return locations
 
 
@@ -60,6 +62,10 @@ def generate_building_location_through_genetic_algorithm(
 
 
 if __name__ == "__main__":
+    start = time.time()
     g_start = get_world_state(paint_fence=True, area=AREA)
     buildings = run_epochs(g_start)
     buildings.paint_buildings()
+
+    mins, sec = divmod(time.time() - start, 60)
+    print(f"\n\nTOTAL RUN TIME: {mins:.0f}m {sec:.0f}s")
