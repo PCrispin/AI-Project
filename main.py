@@ -6,8 +6,9 @@
     """
 
 
+from classes.ENUMS.fitness import fitness_functions
 from classes.building_locations import BuildingLocations
-from classes.Graph import graph
+from classes.Graph import graph, print_all_fitness_graphs
 from classes.http_interface import get_world_state
 from classes.Location_Genome import LocationGenome
 from classes.Population import Population
@@ -32,7 +33,9 @@ def run_epochs(g_representation: graph) -> BuildingLocations:
         )
         locations.add_building(fitess)
         g_representation.building_tiles.extend(locations.locations[-1].build_locations)
-        g_representation.buildings_coords.append(locations.locations[-1].build_coordinates)
+        g_representation.buildings_coords.append(
+            locations.locations[-1].build_coordinates
+        )
     return locations
 
 
@@ -47,6 +50,7 @@ def generate_building_location_through_genetic_algorithm(
     Returns:
         location_genome: Fitess Geneome of the population
     """
+
     population = Population(
         init_random=True, p_size=POPULATION_SIZE, g_repesentation=g_representation
     )
@@ -62,8 +66,11 @@ def generate_building_location_through_genetic_algorithm(
 
 
 if __name__ == "__main__":
+
     start = time.time()
-    g_start = get_world_state(paint_fence=True, area=AREA)
+    g_start = get_world_state(area=AREA)
+    g_start.visualise(fitness=fitness_functions.HOUSE_DISTANCE)
+    # print_all_fitness_graphs(g=g_start)
     buildings = run_epochs(g_start)
     buildings.paint_buildings()
 

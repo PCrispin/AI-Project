@@ -136,7 +136,7 @@ class Population:
             flatness = self.graph.calculate_flatness_from_location(
                 location=(member.x, member.z), building_radius=member.building_radius
             )
-            member.flatness_fintess = flatness
+            member.flatness_fitness = flatness
             flatness_fitness.append(flatness)
 
         if len(water_distance_fitness) != 0:

@@ -1,6 +1,7 @@
 from classes.Types import GridLocation
 from typing import Tuple
 
+
 def get_build_coord(location: GridLocation, building_radius: int) -> list:
     """Get building locations for buidling based on radius
 
@@ -21,28 +22,33 @@ def get_build_coord(location: GridLocation, building_radius: int) -> list:
             build_cord.append((x_value, z_value))
     return build_cord
 
-def rectangles_overlap(rect1: Tuple[int,int,int,int], rect2: Tuple[int,int,int,int]) -> bool :
 
-    def point_in_rectangle(rect: Tuple[int,int,int,int], point: Tuple[int, int]) -> bool:
+def rectangles_overlap(
+    rect1: Tuple[int, int, int, int], rect2: Tuple[int, int, int, int]
+) -> bool:
+    def point_in_rectangle(
+        rect: Tuple[int, int, int, int], point: Tuple[int, int]
+    ) -> bool:
         return rect[0] <= point[0] <= rect[2] and rect[1] <= point[1] <= rect1[3]
 
-    #bottom left corner of rect 2 in rect 1
-    if point_in_rectangle(rect1, (rect2[0], rect2[1])) :
+    # bottom left corner of rect 2 in rect 1
+    if point_in_rectangle(rect1, (rect2[0], rect2[1])):
         return True
 
-    #bottom right corner of rect 2 in rect 1
-    if point_in_rectangle(rect1, (rect2[2], rect2[1])) :
+    # bottom right corner of rect 2 in rect 1
+    if point_in_rectangle(rect1, (rect2[2], rect2[1])):
         return True
 
-    #top left corner of rect 2 in rect 1
-    if point_in_rectangle(rect1, (rect2[0], rect2[3])) :
+    # top left corner of rect 2 in rect 1
+    if point_in_rectangle(rect1, (rect2[0], rect2[3])):
         return True
 
-    #top right corner of rect 2 in rect 1
-    if point_in_rectangle(rect1, (rect2[2], rect2[3])) :
+    # top right corner of rect 2 in rect 1
+    if point_in_rectangle(rect1, (rect2[2], rect2[3])):
         return True
 
     return False
+
 
 def cut_out_bounds(value: int, maximum: int) -> int:
     return max(min(value, maximum), 0)
