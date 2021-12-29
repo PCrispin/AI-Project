@@ -14,12 +14,13 @@ from classes.misc_functions import (
 )
 import matplotlib.pyplot as plt
 from typing import List, Tuple
+from sklearn.preprocessing import minmax_scale
 
 from constants import (
     IMAGE_DIR_FOLD,
     MAX_BUILDING_RADIUS,
-    MAXIMUM_DISTANCE_PENALTY,
     MAXIMUM_HOUSE_DISTANCE_PENALTY,
+    MAXIMUM_WATER_DISTANCE_PENALTY,
     WATER_SEARCH_RADIUS,
 )
 
@@ -109,7 +110,7 @@ class graph:
         )
 
         if PENALTY:
-            return MAXIMUM_DISTANCE_PENALTY
+            return MAXIMUM_WATER_DISTANCE_PENALTY
 
         radius = WATER_SEARCH_RADIUS // 2
 
@@ -159,15 +160,13 @@ class graph:
         for building_location in self.buildings_centres:
             cum_distance += manhattan(location, building_location)
 
-        return np.linalg.norm(np.array(location) - np.array(building_location))
+        value = cum_distance / len(self.buildings_centres)
+        if value == 0:
+            print("Yikes")
+        return value
 
     def _calculate_penalty(self, location, building_radius, type: fitness_functions):
-        coords = (
-            cut_out_bounds(location[0] - building_radius, self.x),
-            cut_out_bounds(location[1] - building_radius, self.z),
-            cut_out_bounds(location[0] + building_radius, self.x),
-            cut_out_bounds(location[1] + building_radius, self.z),
-        )
+        coords = self._calc_coordinates(location, building_radius)
 
         if type == fitness_functions.HOUSE_DISTANCE:
             for building_coords in self.buildings_coords:
@@ -181,6 +180,16 @@ class graph:
                         return True
 
         return False
+
+    def _calc_coordinates(self, location, building_radius):
+        coords = (
+            cut_out_bounds(location[0] - building_radius, self.x),
+            cut_out_bounds(location[1] - building_radius, self.z),
+            cut_out_bounds(location[0] + building_radius, self.x),
+            cut_out_bounds(location[1] + building_radius, self.z),
+        )
+
+        return coords
 
     def calculate_flatness_from_location(
         self, location: GridLocation, building_radius: int
@@ -209,7 +218,6 @@ class graph:
 
     def visualise(
         self,
-        autonormalize=True,
         building_radius=MAX_BUILDING_RADIUS,
         fitness=fitness_functions,
     ):
@@ -217,7 +225,6 @@ class graph:
 
         if fitness == fitness_functions.WATER_BOOLEAN:
             return run_fitness_for_all_coords(
-                autonormalize=autonormalize,
                 fitness=fitness_functions.WATER_BOOLEAN,
                 g=self,
             )
@@ -225,23 +232,21 @@ class graph:
         if fitness == fitness_functions.WATER_DISTANCE:
             return run_bounded_fitness_for_all_coords(
                 fitness=fitness_functions.WATER_DISTANCE,
-                autonormalize=autonormalize,
                 building_radius=building_radius,
                 g=self,
+                show_plot=True,
             )
 
         if fitness == fitness_functions.HOUSE_DISTANCE:
             return run_bounded_fitness_for_all_coords(
                 fitness=fitness_functions.HOUSE_DISTANCE,
-                autonormalize=autonormalize,
                 building_radius=building_radius,
                 g=self,
-                # show_plot=True,
+                show_plot=True,
             )
         if fitness == fitness_functions.FLATNESS:
             return run_bounded_fitness_for_all_coords(
                 fitness=fitness_functions.FLATNESS,
-                autonormalize=autonormalize,
                 building_radius=building_radius,
                 g=self,
             )
@@ -257,24 +262,7 @@ def manhattan(a_value, b_value):
     Returns:
         [type]: Manhattan distance between two vectors
     """
-    return sum(abs(val1 - val2) for val1, val2 in zip(a_value, b_value))
-
-
-def scale(X, x_min, x_max):
-    """Scales an array to a minimum value and maximum value
-
-    Args:
-        X ([type]): [description]
-        x_min ([type]): [description]
-        x_max ([type]): [description]
-
-    Returns:
-        [type]: [description]
-    """
-    nom = (X - X.min(axis=0)) * (x_max - x_min)
-    denom = X.max(axis=0) - X.min(axis=0)
-    denom[denom == 0] = 1
-    return x_min + nom / denom
+    return np.abs(np.array(a_value) - np.array(b_value)).sum()
 
 
 def surface_plot(matrix, **kwargs):
@@ -313,9 +301,7 @@ def show_2d_heatmap(arr: np.array, filename: str):
     heatmap.savefig(IMAGE_DIR_FOLD + "/" + filename + ".png")
 
 
-def run_fitness_for_all_coords(
-    fitness: fitness_functions, g: graph, autonormalize=True, show_plot=False
-):
+def run_fitness_for_all_coords(fitness: fitness_functions, g: graph, show_plot=False):
     fitness_function = []
     if fitness == fitness_functions.WATER_BOOLEAN:
         for x_value in range(0, g.x):
@@ -327,18 +313,23 @@ def run_fitness_for_all_coords(
                     tile.append(0)
             fitness_function.append(tile)
         w_b_m = np.array(fitness_function)
-        if autonormalize:
-            w_b_m = scale(w_b_m, 0, 1)
+        w_b_m = mm_scale(w_b_m)
         if show_plot:
             show_plot(w_b_m)
         show_2d_heatmap(w_b_m, fitness.value)
         return w_b_m
 
 
+def mm_scale(f_m):
+    f_m = np.array(f_m)
+    shape = f_m.shape
+    f_m = minmax_scale(f_m.ravel(), feature_range=(1, 256)).reshape(shape)
+    return f_m
+
+
 def run_bounded_fitness_for_all_coords(
     fitness: fitness_functions,
     g: graph,
-    autonormalize=True,
     building_radius=MAX_BUILDING_RADIUS,
     show_plot=False,
 ):
@@ -354,7 +345,7 @@ def run_bounded_fitness_for_all_coords(
     building_tiles = get_build_coord(location=location, building_radius=building_radius)
     g.building_tiles.extend(building_tiles)
     g.buildings_centres.append(location)
-    g.buildings_coords = [tuple(coords)]
+    g.buildings_coords.append(coords)
     for x_value in range(building_radius, g.x - building_radius):
         tile = []
         for z_value in range(building_radius, g.z - building_radius):
@@ -378,20 +369,20 @@ def run_bounded_fitness_for_all_coords(
                 )
         fitness_map.append(tile)
     f_m = np.array(fitness_map)
-    if autonormalize:
-        f_m = scale(f_m, 0, 1)
+    f_m = mm_scale(f_m)
     if show_plot:
         show_plt(f_m)
     show_2d_heatmap(f_m, fitness.value)
-    g.buildings_coords = []  # clean up the building tiles
     return f_m
 
 
 def print_all_fitness_graphs(g: graph):
+    """Prints all fitness graphs, including a mocked building site.
+    Includes a combined non binary fitness map also.
+    Args:
+        g (graph): Graph representation of the area."""
     fitness_maps = []
-
     for fitness in fitness_functions:
         fitness_maps.append(g.visualise(fitness=fitness))
     f_m = np.add(fitness_maps[0], fitness_maps[1])
-    f_m = scale(f_m, 0, 1)
-    show_plot(f_m)
+    show_plt(f_m)

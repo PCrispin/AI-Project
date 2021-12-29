@@ -6,7 +6,7 @@
     """
 
 
-from classes.ENUMS.fitness import fitness_functions
+from classes.Timer import Timer
 from classes.building_locations import BuildingLocations
 from classes.Graph import graph, print_all_fitness_graphs
 from classes.http_interface import get_world_state
@@ -33,6 +33,7 @@ def run_epochs(g_representation: graph) -> BuildingLocations:
         )
         locations.add_building(fitess)
         g_representation.building_tiles.extend(locations.locations[-1].build_locations)
+        g_representation.buildings_centres.append((fitess.x, fitess.z))
         g_representation.buildings_coords.append(
             locations.locations[-1].build_coordinates
         )
@@ -65,14 +66,17 @@ def generate_building_location_through_genetic_algorithm(
     return fitess_member
 
 
-if __name__ == "__main__":
-
+@Timer(text=" {:.2f} seconds")
+def main():
     start = time.time()
     g_start = get_world_state(area=AREA)
-    g_start.visualise(fitness=fitness_functions.HOUSE_DISTANCE)
     # print_all_fitness_graphs(g=g_start)
     buildings = run_epochs(g_start)
     buildings.paint_buildings()
 
     mins, sec = divmod(time.time() - start, 60)
     print(f"\n\nTOTAL RUN TIME: {mins:.0f}m {sec:.0f}s")
+
+
+if __name__ == "__main__":
+    main()

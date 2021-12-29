@@ -8,12 +8,12 @@ from operator import attrgetter
 from numpy import random
 import numpy as np
 from scipy.stats import multivariate_normal
-from classes.Graph import graph
+from classes.Graph import graph, mm_scale
 
 from classes.Location_Genome import LocationGenome
 from classes.Timer import Timer
 from classes.misc_functions import get_build_coord
-from sklearn.preprocessing import minmax_scale
+
 
 from constants import (
     BUILDING_DISTANCE_WEIGHTING,
@@ -140,19 +140,13 @@ class Population:
             flatness_fitness.append(flatness)
 
         if len(water_distance_fitness) != 0:
-            water_distance_fitness = minmax_scale(
-                water_distance_fitness, feature_range=(1, 2), axis=0
-            )
+            water_distance_fitness = mm_scale(water_distance_fitness)
 
         if len(building_distance_fitness) != 0:
-            building_distance_fitness = minmax_scale(
-                building_distance_fitness, feature_range=(1, 2), axis=0
-            )
+            building_distance_fitness = mm_scale(building_distance_fitness)
 
         if len(flatness_fitness) != 0:
-            flatness_fitness = minmax_scale(
-                flatness_fitness, feature_range=(1, 2), axis=0
-            )
+            flatness_fitness = mm_scale(flatness_fitness)
 
         for i in range(len(self.members)):
             if len(self.graph.water_tiles) != 0:
