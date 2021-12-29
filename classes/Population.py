@@ -229,15 +229,4 @@ class Population:
             LocationGenome: [Member with the best scoring fitness]
         """
         fitess = min(self.members, key=attrgetter("fitness"))
-        build_coords = get_build_coord(
-            location=(fitess.x, fitess.z), building_radius=fitess.building_radius
-        )
-        ideal_y = 100
-        fitess.ideal_y = ideal_y
         return fitess
-
-    def get_population_fitness_standard_deviation(self) -> float:
-        population_fitness = []
-        for member in self.members:
-            population_fitness.append(member.adjusted_fitness)
-        return np.std(population_fitness, axis=0)

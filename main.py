@@ -61,7 +61,7 @@ def generate_building_location_through_genetic_algorithm(
         population = population.next_generation()
     fitess_member = population.get_fitess_member()
     print(
-        f"Found site (x, y, z) ({fitess_member.x}, {fitess_member.ideal_y}, {fitess_member.z}) with build radius {fitess_member.building_radius}"
+        f"Found site (x, y, z) ({fitess_member.x},{fitess_member.z}) with build radius {fitess_member.building_radius}"
     )
     return fitess_member
 
@@ -100,7 +100,7 @@ if __name__ == "__main__":
         metavar="path",
         required=False,
         help="Show debug output",
-        default=False,
+        default=True,
     )
     args = parser.parse_args()
     main(debug=args.debug)

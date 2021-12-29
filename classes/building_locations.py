@@ -36,11 +36,11 @@ class BuildingLocations:
         )
         location.build_locations = build_locations
         location.build_coordinates = (
-                                  vector_coordinate[0] - radius
-                                , vector_coordinate[1] - radius
-                                , vector_coordinate[0] + radius
-                                , vector_coordinate[1] + radius 
-                                )
+            vector_coordinate[0] - radius,
+            vector_coordinate[1] - radius,
+            vector_coordinate[0] + radius,
+            vector_coordinate[1] + radius,
+        )
         self.locations.append(location)
 
     def evaluate(self):
@@ -53,30 +53,8 @@ class BuildingLocations:
 
     def paint_buildings(self):
         """Paints building platforms onto the minecraft world"""
-        location_list = []
-        radii = []
-
-        print("\n")
-
-        index = 1
-
-        for location in self.locations:
-
-            print(f"Site {index}: [{location.x}, {location.z}] - radius: {location.building_radius}")
-            index += 1
-
-            location_list.append((location.x, location.z))
-            radii.append(location.building_radius)
-
-            for tile in location.build_locations:
-                for i in range(location.ideal_y + 1, 50):
-                    vendor.gdmc_http_client.interfaceUtils.placeBlockBatched(
-                        tile[0],
-                        location.ideal_y + i,
-                        tile[1],
-                        block_codes.AIR.value,
-                        100,
-                    )
+        location_list = [(o.x, o.z) for o in self.locations]
+        radii = [o.building_radius for o in self.locations]
         vendor.gdmc_http_client.interfaceUtils.sendBlocks()
 
         print("\n\n****************")
@@ -84,5 +62,3 @@ class BuildingLocations:
         print("****************")
 
         Builder.analyze_and_create(location_list, radii)
-
-
