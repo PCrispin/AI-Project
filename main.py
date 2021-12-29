@@ -13,7 +13,7 @@ from classes.http_interface import get_world_state
 from classes.Location_Genome import LocationGenome
 from classes.Population import Population
 from constants import AREA, BUILDING_NUMBER, GENERATIONS, POPULATION_SIZE
-import time
+import sys, os
 
 
 def run_epochs(g_representation: graph) -> BuildingLocations:
@@ -66,17 +66,41 @@ def generate_building_location_through_genetic_algorithm(
     return fitess_member
 
 
-@Timer(text=" {:.2f} seconds")
-def main():
-    start = time.time()
+def block_print():
+    """Disable print outputs - debugging"""
+    sys.stdout = open(os.devnull, "w")
+
+
+def enable_print():
+    """Disable print outputs - debugging"""
+    sys.stdout = sys.__stdout__
+
+
+@Timer(text="Program executed ran in {:.2f} seconds")
+def main(debug=False):
+    print("Starting Program")
+    if not debug:
+        block_print()
     g_start = get_world_state(area=AREA)
     # print_all_fitness_graphs(g=g_start)
     buildings = run_epochs(g_start)
     buildings.paint_buildings()
-
-    mins, sec = divmod(time.time() - start, 60)
-    print(f"\n\nTOTAL RUN TIME: {mins:.0f}m {sec:.0f}s")
+    if not debug:
+        enable_print()
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Create a minecraft village through GA"
+    )
+    parser.add_argument(
+        "--debug",
+        metavar="path",
+        required=False,
+        help="Show debug output",
+        default=False,
+    )
+    args = parser.parse_args()
+    main(debug=args.debug)

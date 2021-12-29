@@ -14,6 +14,7 @@ from classes.Location_Genome import LocationGenome
 from classes.Timer import Timer
 from classes.misc_functions import get_build_coord
 
+import sys, os
 
 from constants import (
     BUILDING_DISTANCE_WEIGHTING,
