@@ -188,7 +188,13 @@ class building_site(object):
                                                     centers[location_index]
                                                 , direction_preference
                                                 , radii[location_index] + drive_length)
-                if not world_map.get_avoid_value(door_locations_candidate[0], door_locations_candidate[1]) :
+
+                if world_map.get_avoid_value(door_locations_candidate[0], door_locations_candidate[1]) :
+                    if world_map.get_avoid_water_value(door_locations_candidate[0], door_locations_candidate[1]) :
+                        print(f"Site {centers[location_index]}: potential door at {door_locations_candidate} blocked by water.")
+                    else:
+                        print(f"Site {centers[location_index]}: potential door at {door_locations_candidate} blocked by other building.")
+                else:
                     building_orientations.append(direction_preference)
                     door_locations.append(door_locations_candidate)
                     chosen = True
