@@ -3,6 +3,7 @@ from sys import maxsize
 from typing import Tuple, List
 import random
 import time
+from constants import WATER_CODES
 from classes.ENUMS.orientations import orientations
 from classes.ENUMS.block_codes import block_codes
 from classes.ENUMS.building_types import building_types
@@ -19,12 +20,13 @@ from classes.Bool_map import bool_map
 from classes.Building_site import building_site
 from classes.Building import building
 from classes.Buildings import buildings
+from classes.misc_functions import draw_sign
 
 # TODO: This is a flat file!  Make into a proper class...
 
 GRID_WIDTH = 15
 NUMBER_OF_FAMILIES_IN_A_FLAT = 5
-DRIVE_LENGTH = 2
+DRIVE_LENGTH = 1
 BUILDING_MARGIN = 3
 
 
@@ -62,14 +64,6 @@ class Builder:
         MAX_HEIGHT = 255
         MIN_HEIGHT = 0
         MAX_WIDTH_OF_TREE = 10
-        WATER_CODES = [
-            block_codes.WATER,
-            block_codes.FLOWING_WATER,
-            block_codes.ICE,
-            block_codes.PACKED_ICE,
-            block_codes.BLUE_ICE,
-            block_codes.FROSTED_ICE,
-        ]
 
         chopped = (
             []
@@ -260,6 +254,10 @@ class Builder:
                 for zRepeat in range(1, zRepeatCount[z] + 1):
                     buildBlockRotated(blockType, xShifted, y, zShifted + zRepeat)
 
+        
+        sign_y, sign_tree_height = findHeight(site.sign_location[0], site.sign_location[1])
+        draw_sign(site.sign_location[0], sign_y, site.sign_location[1], orientation, building.type.name)
+
         sendBlocks()
 
         self.sites.append(site)
@@ -310,18 +308,32 @@ class Builder:
         building_maps = buildings()
 
         for building_location_type in building_location_types:
-            location_index = building_location_type[0]
-            building_type = building_location_type[1]
-            diameter = building_radii[location_index] * 2
 
-            structure = building_maps.getBiggestByTypeAndSize(
+            location_index: int = building_location_type[0]
+            building_type: building_types = building_location_type[1]
+            diameter: int = building_radii[location_index] * 2
+            facing_direction: orientations = facing_directions[location_index]
+
+            structure: building = building_maps.getBiggestByTypeAndSize(
                 building_type, diameter, diameter
             )
+
             if structure is not None:
+
+                #move building to front of buiding site
+                building_location: Tuple[int, int] = locations[location_index]
+                distance_to_move = (diameter - structure.depth) // 2
+                if distance_to_move > 0 :
+                    building_location = building_site.move_location(
+                          building_location
+                        , facing_direction
+                        , distance_to_move
+                        )
+             
                 self.create(
-                    locations[location_index][0],
-                    locations[location_index][1],
-                    facing_directions[location_index],
+                    building_location[0],
+                    building_location[1],
+                    facing_direction,
                     structure,
                 )
 

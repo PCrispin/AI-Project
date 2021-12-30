@@ -15,7 +15,6 @@ from classes.Population import Population
 from constants import AREA, BUILDING_NUMBER, GENERATIONS, POPULATION_SIZE
 import sys, os
 
-
 def run_epochs(g_representation: graph) -> BuildingLocations:
     """Runs epochs of genetic algorithm to return class containing ideal locations
 
@@ -79,6 +78,7 @@ def enable_print():
 @Timer(text="Program executed ran in {:.2f} seconds")
 def main(debug=False):
     print("Starting Program")
+
     if not debug:
         block_print()
     g_start = get_world_state(area=AREA)

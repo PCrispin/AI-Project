@@ -1,3 +1,4 @@
+from classes.ENUMS.block_codes import block_codes
 """Constants for the GA
     """
 
@@ -30,3 +31,11 @@ VISITS_PER_BUILDING_TYPE = [
     1,      # building_types.TOWN_HALL
 ]  
 BLOCK_BATCH_SIZE = 1000
+WATER_CODES = [
+    block_codes.WATER,
+    block_codes.FLOWING_WATER,
+    block_codes.ICE,
+    block_codes.PACKED_ICE,
+    block_codes.BLUE_ICE,
+    block_codes.FROSTED_ICE,
+]

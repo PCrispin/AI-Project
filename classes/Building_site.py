@@ -38,6 +38,7 @@ class building_site(object):
     area = 0
 
     door_location = 0
+    sign_location = 0
 
     repeaterXs = []
     repeaterZs = []
@@ -90,8 +91,10 @@ class building_site(object):
 
         if orientation in (orientations.NORTH, orientations.SOUTH):
             self.door_location = ((self.x_center, self.side_wall_coordinate(orientation) + self.z_factor))
+            self.sign_location = (self.door_location[0] + self.x_factor * 4, self.door_location[1])
         else:
             self.door_location = ((self.side_wall_coordinate(orientation) + self.x_factor, self.z_center))
+            self.sign_location = (self.door_location[0], self.door_location[1] + self.z_factor * 4)
 
         return
        

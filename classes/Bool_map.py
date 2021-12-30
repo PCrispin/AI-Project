@@ -1,7 +1,7 @@
 from sys import maxsize 
 from vendor.gdmc_http_client.worldLoader import WorldSlice
 from typing import List, Tuple
-from constants import MAX_DETOUR, DEBUG_DRAW_WORKINGS, BLOCK_BATCH_SIZE
+from constants import MAX_DETOUR, DEBUG_DRAW_WORKINGS, BLOCK_BATCH_SIZE #, WATER_CODES
 from classes.ENUMS.block_codes import block_codes
 from vendor.gdmc_http_client.interfaceUtils import placeBlockBatched, sendBlocks
 

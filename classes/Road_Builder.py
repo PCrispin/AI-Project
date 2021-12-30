@@ -145,7 +145,7 @@ def create_roads( roads : List[Tuple[Tuple[int, int], Tuple[int, int]]]
             distances[ind2][ind1] = len(route)
 
     mins, sec = divmod(time.time() - start, 60)
-    print(f"\n\nTotal Time elapsed searching {len(roads)} road: {mins:.0f}m {sec:.0f}s")
+    print(f"\n\nTotal Time elapsed searching {len(roads)} roads: {mins:.0f}m {sec:.0f}s\n")
 
     return distances
 
