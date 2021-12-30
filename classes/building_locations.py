@@ -62,7 +62,7 @@ class BuildingLocations:
 
         for location in self.locations:
 
-            print(f"Site {index}: [{location.x}, {location.z}] - radius: {location.building_radius}")
+            print(f"Site {index: 2d}: [{location.x}, {location.z}] - radius: {location.building_radius}")
             index += 1
 
             location_list.append((location.x, location.z))

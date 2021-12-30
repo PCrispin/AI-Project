@@ -215,21 +215,22 @@ class building_site(object):
         site_count = len(distances)
         locations_availble = list(range(site_count))
 
-        #TODO: check assumption that each building has all roads or none.
-        locations_have_road = [False for i in range(site_count)]
-        for site1 in range(site_count):
-            if not locations_have_road[site1] :
-                for site2 in range(site_count):
-                    if site1 != site2 and distances[site1][site2] != 0:
-                        locations_have_road[site1] = True
-                        locations_have_road[site2] = True
-                        break
-        for site1 in range(site_count):
-            if not locations_have_road[site1] :
-                locations_availble.remove(site1)
+        #use only fully connected.  Any connected to network will be fully connected to all.
+        site_roads_count = [[i] for i in range(site_count)]
+        for site1 in locations_availble:
+            for site2 in locations_availble:
+                if site1 != site2 and distances[site1][site2]:
+                    if site2 not in site_roads_count[site1]:
+                        site_roads_count[site1].append(site2)
+                    if site1 not in site_roads_count[site2]:
+                        site_roads_count[site2].append(site1)
+        
+        locations_availble = []
+        for site_road_count in site_roads_count:
+            if len(site_road_count) > len(locations_availble) :
+                locations_availble = site_road_count
 
         site_count = len(locations_availble)
-
 
         if site_count < 3 :
             raise TimerError(f"Not enough building sites! Some sites may have been removed due to no roads.")
@@ -285,7 +286,7 @@ class building_site(object):
             available_locations = len(locations_list) - house_count + 1
 
             for i in range(available_locations) :
-                if house_count == no_of_houses :
+                if house_count == no_of_houses and winning_score != maxsize:
                     mins, sec = divmod(time.time() - start_bfs, 60)
                     print(f"Find optimum location {100*i/available_locations:.0f}% complete  {mins:.0f}m {sec:.0f}s Winning score: {winning_score}")
 
@@ -307,7 +308,7 @@ class building_site(object):
                                    , buildings_list : List[building_types]
                                    , locations_list : List[int]) -> Tuple[int, List[Tuple[int, building_types]]]:
 
-            if len(locations_list) == 0 :
+            if not locations_list :
         
                 function_building_locations = []
                 house_location_adresses = []
@@ -360,8 +361,8 @@ class building_site(object):
         print(f"Total distance: {total_distance}")
         for building_location_type in building_location_types:
             print(f"Building location: {building_location_type[0]} -> {building_location_type[1].name}")
-        for index in range(len(locations_have_road)):
-            if not locations_have_road :
+        for index in range(len(site_roads_count)):
+            if not site_roads_count :
                 print(f"Building location: {index} -> NONE due to no roads.")
 
         mins, sec = divmod(time.time() - start_bfs, 60)

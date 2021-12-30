@@ -12,6 +12,9 @@
     <Name>GA Location Analyser</Name>
     <RootNamespace>GA Location Analyser</RootNamespace>
     <InterpreterId>CondaEnv|CondaEnv|py37</InterpreterId>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <CommandLineArguments>--debug True</CommandLineArguments>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,7 +25,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="classes\AStar.py">
+    <Compile Include="classes\Road_Builder.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="classes\Bool_map.py">

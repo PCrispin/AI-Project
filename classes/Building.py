@@ -60,7 +60,7 @@ class building(object):
         def create(extraCount: int, available: List[int]) -> List[int]:
             reps = []
 
-            if extraCount > 0 and len(available) > 0 :
+            if extraCount > 0 and available :
                 for n in range[extraCount]:
                     reps.append(available[n % len(available)])
                 reps.sort()

@@ -1,8 +1,9 @@
 from math import sqrt
 from random import *
 import time
+import sys
 from sys import maxsize 
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 from vendor.gdmc_http_client.worldLoader import WorldSlice
 from vendor.gdmc_http_client.interfaceUtils import placeBlockBatched, sendBlocks, runCommand, setBlock
 from constants import MAX_DETOUR, DEBUG_DRAW_WORKINGS, BLOCK_BATCH_SIZE
@@ -58,10 +59,10 @@ def create_roads( roads : List[Tuple[Tuple[int, int], Tuple[int, int]]]
 
     for road in roads:
         start_road = time.time()
-        if road[0] not in no_route_found_count or no_route_found_count[road[0]] < 2 :
+        if road[0] not in no_route_found_count or no_route_found_count[road[0]] < 4 :
             road_route = _find_route(road[0], road[1], world_slice, world_map, grid_width)
 
-            if len(road_route) == 0:
+            if not road_route :
                 no_route_found_count[road[0]] = 1 if road[0] not in no_route_found_count else no_route_found_count[road[0]] + 1
                 no_route_found_count[road[1]] = 1 if road[1] not in no_route_found_count else no_route_found_count[road[1]] + 1
         else:
@@ -73,6 +74,8 @@ def create_roads( roads : List[Tuple[Tuple[int, int], Tuple[int, int]]]
         mins2, sec2 = divmod(time.time() - start, 60)
         count += 1
         print(f"Time elapsed searching for {count}/{len(roads)} road: {mins:.0f}m {sec:.0f}s accum: {mins2:.0f}m {sec2:.0f}s")
+
+    find_missing_routes(roads, roads_routes)
 
     def draw_road(x: int, y_plus_1:int, z: int, is_stripe: bool = False) :
         if not world_map.get_avoid_value(x, z) :
@@ -135,7 +138,7 @@ def create_roads( roads : List[Tuple[Tuple[int, int], Tuple[int, int]]]
     distances = [[0 for i in range(len(door_locations))] for i in range(len(door_locations))]
 
     for route in roads_routes:
-        if len(route) > 0:
+        if route :
             ind1 = door_locations.index((route[0][0], route[0][2]))
             ind2 = door_locations.index((route[-1][0], route[-1][2]))
             distances[ind1][ind2] = len(route)
@@ -274,7 +277,7 @@ def _find_route(origin: Tuple[int, int], destination: Tuple[int, int], world_sli
 
     focus_tile = tile_bfs.get_root_node(origin_x, origin_y, origin_z)
 
-    print("\nFinding route: [{}, {}] to [{}, {}]   dx:{} dz:{} dy:{} ".format(origin_x, origin_z, destination_x, destination_z, destination_x - origin_x, destination_z - origin_z, destination_y - origin_y))
+    print("\nFinding route: [{}, {}] to [{}, {}]   dx:{} dz:{} dy:{} = {}".format(origin_x, origin_z, destination_x, destination_z, destination_x - origin_x, destination_z - origin_z, destination_y - origin_y, manhattan))
 
     def set_route(focus_tile: tile_bfs, depth: int):
         while True:                   
@@ -284,7 +287,7 @@ def _find_route(origin: Tuple[int, int], destination: Tuple[int, int], world_sli
             focus_tile: tile_bfs = focus_tile.from_tile
 
         world_map.set_road(route, destination)
-        print(f"Route found length:{depth} manhattan dist: {manhattan} considered: {len(tile_map)}")
+        print(f"Route found  length:{depth}  manhattan dist: {manhattan}  considered: {len(tile_map)} blocks")
 
     while frontier:
         focus_tile: tile_bfs = tile_bfs.frontier_pop()
@@ -313,7 +316,7 @@ def _find_route(origin: Tuple[int, int], destination: Tuple[int, int], world_sli
                 has_road, road_already_goes_to_destination, existing_route = world_map.check_already_goes_to(new_x, new_z, destination)
 
                 if road_already_goes_to_destination :
-                    depth = focus_tile.depth + len(route)        
+                    depth = focus_tile.depth + len(existing_route)        
                     print(f"Partial route taken from existing road {existing_route[-1]}-{existing_route[0]} - borrowed route length: {len(existing_route)}")
                     for address in existing_route:
                         route.append(address)
@@ -357,6 +360,111 @@ def _find_route(origin: Tuple[int, int], destination: Tuple[int, int], world_sli
 
                             new_tile = tile_bfs(new_x, new_y, new_z, new_cost, focus_tile, focus_tile.depth + 1)   
 
-    print(f"No route possible! Tried {len(tile_map)} blocks.")
+    print(f"Aborted - No route found after looking at {len(tile_map)} blocks.")
     return finish_up([])
 
+def find_missing_routes(roads: List[Tuple[Tuple[int, int], Tuple[int, int]]]
+                        , roads_routes: List[Tuple[Tuple[int, int]]]) :
+    #Breadth First Search to replace missing roads - eg no road from A->C so find A->B->C
+    # roads is simply start, end addresses
+    # road route is list of address of every brick on route
+
+    destinations: Dict[Tuple[int, int], List[Tuple[Tuple[int, int], int]]] = {}
+
+    def add_destination(origin: Tuple[int,int,int], to: Tuple[int, int], distance: int) :
+        if len(origin) == 3 :
+            origin_2d, to_2d = (origin[0], origin[2]), (to[0], to[2])
+        else :
+            origin_2d, to_2d = origin, to
+
+        if origin_2d in destinations:
+            destinations[origin_2d].append((to_2d, distance))
+        else:
+            destinations[origin_2d] = [(to_2d, distance)]
+
+    def get_road_route(origin: Tuple[int,int], to: Tuple[int, int]) -> List[Tuple[int, int]]:
+        for road_route in roads_routes:
+            if road_route :
+                if origin[0] == road_route[0][0] and origin[1] == road_route[0][2] \
+                    and to[0] == road_route[-1][0] and to[1] == road_route[-1][2]  :
+                    return road_route
+
+                if to[0] == road_route[0][0] and to[1] == road_route[0][2] \
+                    and origin[0] == road_route[-1][0] and origin[1] == road_route[-1][2]  :
+                    reverse_route =  road_route[:]
+                    reverse_route.reverse()
+                    return reverse_route
+        return []
+
+    for road_route in roads_routes:
+        if road_route :
+            add_destination(road_route[0], road_route[-1], len(road_route))
+            add_destination(road_route[-1], road_route[0], len(road_route))
+
+    for index in range(len(roads_routes)):
+        #no route found but both the origin and destination have other routes
+        if not roads_routes[index] \
+            and roads[index][0] in destinations \
+            and roads[index][1] in destinations :
+
+            origin = roads[index][0]
+            destination = roads[index][1]
+            overall_winning_distance = sys.maxsize
+
+            def recursive_bfs(current_node: Tuple[int,int], distance, parents:List [Tuple[int,int]]) -> Tuple[List[Tuple[int,int]], int] :
+                nonlocal overall_winning_distance
+                
+                if current_node[0] == destination[0] and current_node[1] == destination[1] :
+                    return [current_node], distance
+
+                winning_distance = sys.maxsize
+                winning_route = []
+
+                if distance > overall_winning_distance :
+                    return winning_route, winning_distance
+
+                for child_node, child_distance in destinations[current_node]:
+                    if child_node not in parents :
+                        
+                        #when adding legs, the last square of the previous leg and first in the new leg are the same
+                        dist_correction = -1 if parents else 0 
+                        
+                        child_route, total_distance = recursive_bfs(child_node
+                                                                    , distance + child_distance + dist_correction
+                                                                    , parents + [child_node])
+
+                        if total_distance < winning_distance :
+                            winning_distance = total_distance
+                            child_route.append(current_node)
+                            winning_route = child_route
+
+                        if total_distance < overall_winning_distance:
+                            overall_winning_distance = total_distance
+
+                return winning_route, winning_distance
+
+            route, dist = recursive_bfs(origin, 0, [])
+            route.reverse()
+
+            if dist != sys.maxsize and route :
+                description = f"\nFound route from [{origin[0]}, {origin[1]}] to [{destination[0]}, {destination[1]}] via "
+
+                #len(route) should never be 2 or less because means there was a direct route afterall...
+                road_route = []
+                for leg_index in range(len(route) - 1):
+                    next_leg = get_road_route(route[leg_index], route[leg_index+1])
+
+                    if road_route and next_leg :
+                        description = description + f"[{route[leg_index][0]}, {route[leg_index][1]}] "
+                        road_route = road_route + next_leg[1:]
+                    else:
+                        road_route = road_route + next_leg
+
+                roads_routes[index] = road_route
+                add_destination(origin, destination, dist)
+                add_destination(destination, origin, dist)
+
+                if dist != len(road_route) :
+                    raise Exception(f"Route length wrong {dist} != {len(road_route)} for: {description}")
+
+                print(description + f" length {dist} ****")

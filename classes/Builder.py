@@ -9,7 +9,7 @@ from classes.ENUMS.building_types import building_types
 from vendor.gdmc_http_client.interfaceUtils import placeBlockBatched, sendBlocks, runCommand
 from vendor.gdmc_http_client.worldLoader import WorldSlice
 from constants import BLOCK_BATCH_SIZE
-from classes.AStar import create_roads
+from classes.Road_Builder import create_roads
 from classes.Bool_map import bool_map
 from classes.Building_site import building_site
 from classes.Building import building
@@ -63,13 +63,13 @@ class Builder:
             maxY = -maxsize
             minY = maxsize
 
-            smallX, bigX = min(x1, x2), max(x1, x2)
+            smallX, bigX = min(x1, x2) - 1, max(x1, x2) + 1
 
             for x in range(smallX, bigX + 1) : 
                 if x - smallX % 20 == 0 :
                     print("Heights {:.0f}% found.".format(100*(x - smallX)/(bigX - smallX)))
 
-                for z in range(min(z1, z2), max(z1, z2) + 1) :
+                for z in range(min(z1, z2) - 1, max(z1, z2) + 2) :
                     yFloor, yObjects = findHeight(x, z)
 
                     #Check for tree stumps.
@@ -213,7 +213,7 @@ class Builder:
                              , orientation :orientations, building: building
                              , requiredWidth: int = -1, requiredDepth: int = -1) -> bool :
 
-        if len(self.sites) == 0:
+        if not self.sites:
             return False
         
         x_center, z_center = self.sites[-1].calc_adjacent_location(orientation, gapBetweenBuildings
@@ -223,7 +223,7 @@ class Builder:
         return self.create(x_center, z_center, orientation, building, requiredWidth, requiredDepth)
 
     def last_site(self) -> building_site :
-        if len(self.sites) > 0 :
+        if self.sites :
             return self.sites[-1]
         else:
             return None

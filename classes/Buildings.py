@@ -16,7 +16,7 @@ class buildings(object):
     def getByName(self, building_name: building_names) -> building :
         """Return a building by name.  eg building_names.APPLE_STORE"""
         builds = list(filter(lambda b: b.id == building_name.value , self.buildings))
-        if len(builds) == 0 :
+        if not builds :
             return None
 
         return builds[0]
@@ -29,7 +29,7 @@ class buildings(object):
         """Return one random building of a certain type.  eg building_types.HOUSE"""
         builds = self.getByType(building_type)
 
-        if len(builds) == 0 :
+        if not builds :
             return None
 
         return choice(builds)
@@ -42,7 +42,7 @@ class buildings(object):
         """Return one random building of a certain size."""
         builds = self.getBySize(maxWidth, maxDepth)
 
-        if len(builds) == 0 :
+        if not builds :
             return None
 
         return choice(builds)
@@ -55,7 +55,7 @@ class buildings(object):
         """Return one random building of a certain type and size.  eg building_types.HOUSE less than 20x20"""
         builds = self.getByTypeAndSize(building_type, maxWidth, maxDepth)
 
-        if len(builds) == 0 :
+        if not builds :
             return None
 
         return choice(builds)
@@ -64,7 +64,7 @@ class buildings(object):
         """Return the largest building of a certain type within a specified size.  eg building_types.HOUSE less than 20x20"""
         builds = self.getByTypeAndSize( building_type, maxWidth, maxDepth)
 
-        if len(builds) == 0 :
+        if not builds :
             return None
 
         builds.sort(key=lambda x:x.area())
@@ -75,7 +75,7 @@ class buildings(object):
         """Return the largest building of a certain type within a specified size.  eg building_types.HOUSE less than 20x20"""
         builds = self.getBySize( maxWidth, maxDepth)
 
-        if len(builds) == 0 :
+        if not builds :
             return None
 
         builds.sort(key=lambda x:x.area())
