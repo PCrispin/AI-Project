@@ -10,6 +10,7 @@ from classes.Types import GridLocation
 from constants import MAX_BUILDING_RADIUS
 from typing import List, Tuple
 
+
 class LocationGenome:
     """Class for location genome"""
 
@@ -29,8 +30,7 @@ class LocationGenome:
         self.adjusted_fitness: int = 0  # adjusted fitness
         self.fitness_probability: int = 0  # Chance of selection
         self.build_locations: list = []
-        self.build_coordinates: Tuple[int,int,int,int] = ()
-        self.ideal_y: int = 0
+        self.build_coordinates: Tuple[int, int, int, int] = ()
         if init_random:
             self.x, self.z = self._get_random_possible_coordinate()
 
