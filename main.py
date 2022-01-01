@@ -88,7 +88,7 @@ def main(debug=False):
     g_start = get_world_state(area=AREA)
     # print_all_fitness_graphs(g=g_start)
     buildings = run_epochs(g_start)
-    buildings = remove_overlapping_buildings(buildings)
+    remove_overlapping_buildings(buildings)
     buildings.paint_buildings()
 
     if not debug:
@@ -111,12 +111,11 @@ def remove_overlapping_buildings(buildings):
     if len(true_indexes) > 0:
         for i in true_indexes:
             site_1 = check_order[i][0]
-            site_2 = check_order[i][1]
             if site_1 in buildings.locations:
                 buildings.locations.remove(site_1)
-            if site_2 in buildings.locations:
-                buildings.locations.remove(site_2)
-    return buildings
+                remove_overlapping_buildings(buildings)
+    else:
+        return
 
 
 if __name__ == "__main__":
