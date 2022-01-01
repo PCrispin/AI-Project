@@ -6,9 +6,9 @@
 """
 
 import random
+from typing import Tuple
 from classes.Types import GridLocation
 from constants import MAX_BUILDING_RADIUS
-from typing import List, Tuple
 
 
 class LocationGenome:
@@ -54,10 +54,3 @@ class LocationGenome:
             range((MAX_BUILDING_RADIUS), (self.graph_space[1] - MAX_BUILDING_RADIUS))
         )
         return (random_x_value, random_z_value)
-
-    def _check_vector_possible(self) -> bool:
-        location = (self.x, self.z)
-        if location not in self.walled_vectors:
-            return True
-        else:
-            return False

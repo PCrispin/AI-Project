@@ -1,19 +1,20 @@
 """ Generates a list of building locations through genetic algorithms
+       """
 
-    Returns:
-        [list] - List containing A location genomes containing best building locations,
-        building location blocks, and fitness value.
-    """
-
-
+import sys
+import os
+import random
 from classes.Timer import Timer
 from classes.building_locations import BuildingLocations
-from classes.Graph import graph, print_all_fitness_graphs
+from classes.Graph import graph
 from classes.http_interface import get_world_state
 from classes.Location_Genome import LocationGenome
 from classes.Population import Population
-from constants import AREA, BUILDING_NUMBER, GENERATIONS, POPULATION_SIZE
-import sys, os
+from constants import AREA, BUILDING_NUMBER, GENERATIONS, POPULATION_SIZE, RANDOM_SEED
+
+
+random.seed(RANDOM_SEED)
+
 
 def run_epochs(g_representation: graph) -> BuildingLocations:
     """Runs epochs of genetic algorithm to return class containing ideal locations
@@ -100,7 +101,7 @@ if __name__ == "__main__":
         metavar="path",
         required=False,
         help="Show debug output",
-        default=True,
+        default=False,
     )
     args = parser.parse_args()
     main(debug=args.debug)

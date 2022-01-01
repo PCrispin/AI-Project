@@ -1,7 +1,6 @@
 """Class containing all building locations and operations
     on the building sites
  """
-from classes.ENUMS.block_codes import block_codes
 from classes.Location_Genome import LocationGenome
 from classes.misc_functions import get_build_coord
 from classes.Builder import Builder
