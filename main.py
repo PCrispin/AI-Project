@@ -4,7 +4,7 @@ import sys
 import os
 import random
 from typing import Tuple
-from classes.ENUMS.biome_ids import biome_ids, biome_regions
+from classes.ENUMS.biome_ids import biome_regions
 from classes.ENUMS.block_codes import block_codes
 from classes.Timer import Timer
 from classes.building_locations import BuildingLocations
@@ -52,21 +52,26 @@ def run_epochs(g_representation: graph) -> BuildingLocations:
             locations.locations[-1].build_coordinates
         )
 
-    village_biome, variable_block_type = determine_village_biome(locations)
+    village_biome, variable_block_type = determine_village_biome(locations=locations)
     return locations
 
 
 def determine_village_biome(
     locations: BuildingLocations,
 ) -> Tuple[biome_regions, block_codes]:
-    biome_lst = []
-    for location in locations.locations:
-        biome_id = locations.get_biome(location=location, y_index=100)
-        biome_region = biome_regions(BIOME_MAP_DICTIONARY.get(biome_id))
-        biome_lst.append(biome_region.value)
-    best_biome = biome_regions(max(set(biome_lst), key=biome_lst.count))
-    block_type = BIOME_BLOCK_MAP_DICTIONARY.get(best_biome)
-    return best_biome, block_type
+
+    try:
+        biome_lst = []
+        for location in locations.locations:
+            biome_id = locations.get_biome(location=location, y_index=100)
+            biome_region = biome_regions(BIOME_MAP_DICTIONARY.get(biome_id))
+            biome_lst.append(biome_region.value)
+        best_biome = biome_regions(max(set(biome_lst), key=biome_lst.count))
+        block_type = BIOME_BLOCK_MAP_DICTIONARY.get(best_biome)
+
+        return best_biome, block_type
+    except ValueError:
+        return biome_regions.DESERT, block_codes.SANDSTONE
 
 
 def generate_building_location_through_genetic_algorithm(
