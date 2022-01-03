@@ -1,10 +1,13 @@
 from classes.ENUMS.orientations import orientations
 from classes.Building import building
+from classes.Buildings import buildings
 from classes.Bool_map import bool_map
 from classes.ENUMS.building_types import building_types
+from classes.ENUMS.building_styles import building_styles
 from classes.ENUMS.building_names import building_names
 from constants import VISITS_PER_BUILDING_TYPE
-from typing import Tuple, List
+from typing import Tuple, List, Dict
+from collections import Counter
 from sys import maxsize 
 import time
 
@@ -164,7 +167,7 @@ class building_site(object):
 
         # Make sure building is facing the center of the village, if possible.
         direction_preferences = []
-        for location in centers:
+        for location in centers: #type: Tuple[int, int]
             if average_location[0] - location[0] > 0 :
                 e_w_preference = (orientations.EAST, orientations.WEST)
             else:
@@ -184,7 +187,7 @@ class building_site(object):
         building_orientations = []
         door_locations = []
 
-        for location_index in range(n_sites):
+        for location_index in range(n_sites): #type: int
             chosen = False
             for direction_preference in direction_preferences[location_index]:
                 door_locations_candidate = building_site.move_location(
@@ -207,8 +210,8 @@ class building_site(object):
 
         roads = []
 
-        for site1 in range(n_sites) : # functional_indices:
-            for site2 in range(n_sites) : # functional_indices:
+        for site1 in range(n_sites) :  #type: int
+            for site2 in range(n_sites) :  #type: int
                 if site1 != site2 :
                     if      (door_locations[site1], door_locations[site2]) not in roads \
                         and (door_locations[site2], door_locations[site1]) not in roads:
@@ -217,64 +220,124 @@ class building_site(object):
         return building_orientations, door_locations, roads
 
     @classmethod
-    def calc_building_types(self, distances: List[List[int]], number_of_families_in_a_flat: int) -> List[Tuple[int, building_types]]:
+    def calc_building_types(self
+                            , distances: List[List[int]]
+                            , building_radii: List[int]
+                            , number_of_families_in_a_flat: int
+                            , building_style: building_styles = building_styles.UNKNOWN
+                            ) -> List[Tuple[int, building_types]]:
 
         start_bfs = time.time()
 
         site_count = len(distances)
-        locations_availble = list(range(site_count))
+        locations_available = list(range(site_count))
+
+        #*********************************************************************************************************
+        #Not all buildings are always connected.  Find which is the most connected network
 
         #use only fully connected.  Any connected to network will be fully connected to all.
-        site_roads_count = [[i] for i in range(site_count)]
-        for site1 in locations_availble:
-            for site2 in locations_availble:
+        site_roads_count = [[i] for i in range(site_count)] #Assign the site itself to its own list
+        for site1 in locations_available: #type: int
+            for site2 in locations_available: #type: int
                 if site1 != site2 and distances[site1][site2]:
                     if site2 not in site_roads_count[site1]:
                         site_roads_count[site1].append(site2)
                     if site1 not in site_roads_count[site2]:
                         site_roads_count[site2].append(site1)
         
-        locations_availble = []
-        for site_road_count in site_roads_count:
-            if len(site_road_count) > len(locations_availble) :
-                locations_availble = site_road_count
+        #assign the most connected site list to locations_available
+        locations_available = []
+        for site_road_count in site_roads_count: #type: int
+            if len(site_road_count) > len(locations_available) :
+                locations_available = site_road_count
 
-        site_count = len(locations_availble)
+        available_site_count = len(locations_available)
+        
 
-        if site_count < 3 :
+        #*********************************************************************************************************
+        #Calculate which buildings will fit in which sites.  For example, Town Hall might only fit in sites 1, and 6
+        #Decide which building types will be placed in village and add to variable building_types_in_village.  This is decided by 
+        #number of sites, and if there is physical space for building of that size.
+        #
+        #example_solution_sites_available tracks if there is space left - when a building type is requested, it is assigned 
+        #to the smallest site where it will fit (in example_solution_sites_available).  If there are no available
+        #spaces left where it will physically fit, that building type will not be added.  This assures that there is
+        #at least one working combination of buildings in sites for BFS to find below
+
+        building_types_in_village: List[building_types] = []
+
+        smallest_building_size_by_type: Dict[building_types, int] = buildings.get_smallest_building_types(building_style)
+
+        building_types_fit_in_sites: List[List[building_types]] = [[] for i in range(site_count)]
+
+        for site_index in locations_available: #type: int
+            site_diameter: int = building_radii[site_index] * 2
+
+            for building_type, smallest_size in smallest_building_size_by_type.items(): #type: building_types, int
+                if site_diameter >= smallest_size :
+                    building_types_fit_in_sites[site_index].append(building_type)
+                
+        example_solution_sites_available: List[bool] = [i in locations_available for i in range(site_count)]
+
+        def add_type(building_type: building_types) -> bool:
+            winning_site_index: int = -1
+            winning_site_radius: int = maxsize
+
+            for index in range(site_count): #type: int
+                if (        example_solution_sites_available[index] 
+                        and building_type in building_types_fit_in_sites[index] 
+                        and winning_site_radius >  building_radii[index]) :
+                    winning_site_index = index
+                    winning_site_radius = building_radii[index]
+
+            if winning_site_index == -1:
+                print(f"{building_type} can not be built due to no suitable sites.")
+                return False
+
+            example_solution_sites_available[winning_site_index] = False
+            building_types_in_village.append(building_type)
+            return True
+
+        if available_site_count < 3 :
             raise TimerError(f"Not enough building sites! Some sites may have been removed due to no roads.")
-        elif site_count < 10 :
-            building_types_in_village = []
-            building_types_in_village.append(building_types.FACTORY)
-            building_types_in_village.append(building_types.SHOP)
-            building_types_in_village.append(building_types.FLATS)
-
-            for h in range(site_count - 3):
-                building_types_in_village.append(building_types.HOUSE)
+        elif available_site_count < 10 :
+            add_type(building_types.FACTORY)
+            add_type(building_types.SHOP)
+            add_type(building_types.FLATS)
         else:
-            building_types_in_village = [building_types.TOWN_HALL]
-            building_allocations = site_count - 1
-            for index in range(building_allocations // 9):
-                building_types_in_village.append(building_types.FACTORY)
-                building_types_in_village.append(building_types.SHOP)
-                building_types_in_village.append(building_types.RESTAURANT)
-                building_types_in_village.append(building_types.FLATS)
-                for h in range(5):
-                    building_types_in_village.append(building_types.HOUSE)
-            for h in range(building_allocations % 9):
-                building_types_in_village.append(building_types.HOUSE)
+            for index in range(available_site_count // 10): #type: int
+                add_type(building_types.SHOP)
+                add_type(building_types.FACTORY)
+                add_type(building_types.RESTAURANT)
+                add_type(building_types.FLATS)
 
-        buildings_available_no_houses = list(filter(lambda x: x != building_types.HOUSE, building_types_in_village))
-        no_of_houses = site_count - len(buildings_available_no_houses)
+            add_type(building_types.TOWN_HALL)
+
+        while available_site_count > len(building_types_in_village): 
+            if not add_type(building_types.HOUSE) :
+                break
+
+        #Check the sites to make sure there is at least one building that will fit.
+        sites_with_no_possible_buildings = list(filter(lambda site: site == True, example_solution_sites_available))
+        for site in sites_with_no_possible_buildings:
+            locations_available.remove(site)
+
+        available_site_count = len(locations_available)
+
+        print(f"Building types in village: " + str(Counter(building_types_in_village)))
+        print(f"Building sites where no buildings fit: " + str(sites_with_no_possible_buildings) + "\n")
+
+        building_types_in_village_not_houses = list(filter(lambda x: x != building_types.HOUSE, building_types_in_village))
+        total_no_of_houses = available_site_count - len(building_types_in_village_not_houses)
 
         chosen_house_locations = []
 
         class attempt_details():
-            def __init__(self, parent, location_index: int, building: building_types, is_top_node: bool = False):
-                self.parent = parent
-                self.location_index = location_index
-                self.building = building
-                self.is_top_node = is_top_node
+            def __init__(self, parent: 'attempt_details', location_index: int, building: building_types, is_top_node: bool = False):
+                self.parent: 'attempt_details' = parent
+                self.location_index: int = location_index
+                self.building: building_types = building
+                self.is_top_node: bool = is_top_node
 
             @classmethod
             def get_top_node(cls):
@@ -289,26 +352,28 @@ class building_site(object):
                                 , house_count: int
                                 , locations_list : List[int]) -> Tuple[int, List[Tuple[int, building_types]]]:
             if house_count == 0 :
-                return recursive_bfs_step2(attempt, buildings_available_no_houses, locations_list)
+                return recursive_bfs_step2(attempt, building_types_in_village_not_houses, locations_list)
 
             winning_score = maxsize
-            available_locations = len(locations_list) - house_count + 1
+            available_locations_count = len(locations_list) - house_count + 1
 
-            for i in range(available_locations) :
-                if house_count == no_of_houses and winning_score != maxsize:
+            for i in range(available_locations_count) : #type: int
+
+                if house_count == total_no_of_houses and winning_score != maxsize:
                     mins, sec = divmod(time.time() - start_bfs, 60)
-                    print(f"Find optimum location {100*i/available_locations:.0f}% complete  {mins:.0f}m {sec:.0f}s Winning score: {winning_score}")
+                    print(f"Find optimum location {100*i/available_locations_count:.0f}% complete  {mins:.0f}m {sec:.0f}s Winning score: {winning_score}")
 
-                location = locations_list.pop(i)
+                if building_types.HOUSE in building_types_fit_in_sites[locations_list[i]]:
+                    location = locations_list.pop(i)
 
-                candidate_score, candidate_building_locations = recursive_bfs_step1(
-                      attempt_details(attempt, location, building_types.HOUSE), house_count - 1, locations_list)
+                    candidate_score, candidate_building_locations = recursive_bfs_step1(
+                          attempt_details(attempt, location, building_types.HOUSE), house_count - 1, locations_list)
 
-                locations_list.insert(i, location)
+                    locations_list.insert(i, location)
 
-                if candidate_score < winning_score :
-                    winning_score = candidate_score
-                    winning_building_locations = candidate_building_locations
+                    if candidate_score < winning_score :
+                        winning_score = candidate_score
+                        winning_building_locations = candidate_building_locations
 
             return winning_score, winning_building_locations
 
@@ -316,7 +381,6 @@ class building_site(object):
         def recursive_bfs_step2(     attempt: attempt_details
                                    , buildings_list : List[building_types]
                                    , locations_list : List[int]) -> Tuple[int, List[Tuple[int, building_types]]]:
-
             if not locations_list :
         
                 function_building_locations = []
@@ -333,10 +397,10 @@ class building_site(object):
                     attempt = attempt.parent
 
                 total_distance = 0
-                for candidate_address, candidate_building in function_building_locations:
+                for candidate_address, candidate_building in function_building_locations: #type: int, building_types
                     visit_count = VISITS_PER_BUILDING_TYPE[candidate_building.value]
-            
-                    for house_address in house_location_adresses:
+                    
+                    for house_address in house_location_adresses: #type: int
                         total_distance += visit_count * distances[candidate_address][house_address]
                     total_distance += visit_count * number_of_families_in_a_flat * distances[candidate_address][flat_address]
 
@@ -347,30 +411,31 @@ class building_site(object):
 
             location = locations_list.pop(0)
 
-            for i in range(len(buildings_list)):
+            for i in range(len(buildings_list)): #type: int
 
-                building = buildings_list.pop(i)
+                if buildings_list[i] in building_types_fit_in_sites[location]:
+                    building = buildings_list.pop(i)
 
-                candidate_score, candidate_building_locations = recursive_bfs_step2(
-                      attempt_details(attempt, location, building), buildings_list, locations_list)
+                    candidate_score, candidate_building_locations = recursive_bfs_step2(
+                          attempt_details(attempt, location, building), buildings_list, locations_list)
 
-                buildings_list.insert(1, building)
+                    buildings_list.insert(1, building)
 
-                if candidate_score < winning_score :
-                    winning_score = candidate_score
-                    winning_building_locations = candidate_building_locations
+                    if candidate_score < winning_score :
+                        winning_score = candidate_score
+                        winning_building_locations = candidate_building_locations
 
             locations_list.insert(0, location)
 
             return winning_score, winning_building_locations
         ################################################################################################################
 
-        total_distance, building_location_types = recursive_bfs_step1(attempt_details.get_top_node(), no_of_houses, locations_availble)
+        total_distance, building_location_types = recursive_bfs_step1(attempt_details.get_top_node(), total_no_of_houses, locations_available)
 
         print(f"Total distance: {total_distance}")
-        for building_location_type in building_location_types:
+        for building_location_type in building_location_types: #type: Tuple[int, building_types]
             print(f"Building location: {building_location_type[0]} -> {building_location_type[1].name}")
-        for index in range(len(site_roads_count)):
+        for index in range(len(site_roads_count)): #type: int
             if not site_roads_count :
                 print(f"Building location: {index} -> NONE due to no roads.")
 

@@ -7,6 +7,7 @@ from constants import WATER_CODES
 from classes.ENUMS.orientations import orientations
 from classes.ENUMS.block_codes import block_codes
 from classes.ENUMS.building_types import building_types
+from classes.ENUMS.building_styles import building_styles
 from classes.Timer import Timer
 from vendor.gdmc_http_client.interfaceUtils import (
     placeBlockBatched,
@@ -14,7 +15,7 @@ from vendor.gdmc_http_client.interfaceUtils import (
     runCommand,
 )
 from vendor.gdmc_http_client.worldLoader import WorldSlice
-from constants import BLOCK_BATCH_SIZE
+from constants import BLOCK_BATCH_SIZE, MAX_BUILDING_RADIUS
 from classes.Road_Builder import create_roads
 from classes.Bool_map import bool_map
 from classes.Building_site import building_site
@@ -88,7 +89,7 @@ class Builder:
 
             smallX, bigX = min(x1, x2) - 1, max(x1, x2) + 1
 
-            for x in range(smallX, bigX + 1):
+            for x in range(smallX, bigX + 1): #type: int
                 if x - smallX % 20 == 0:
                     print(
                         "Heights {:.0f}% found.".format(
@@ -96,15 +97,18 @@ class Builder:
                         )
                     )
 
-                for z in range(min(z1, z2) - 1, max(z1, z2) + 2) :
+                for z in range(min(z1, z2) - 1, max(z1, z2) + 2) : #type: int
                     yFloor, yObjects = findHeight(x, z)
 
                     # Check for tree stumps.
                     while True:
-                        block = world_slice.getBlockAt((x, yFloor - 1, z))
-                        if block[-4] == "_log":
+                        block1 = world_slice.getBlockAt((x, yFloor, z))
+                        block2 = world_slice.getBlockAt((x, yFloor - 1, z))
+                        if block1[-4] == "_log":
                             yFloor -= 1
-                        elif block in WATER_CODES:
+                        elif block2[-4] == "_log":
+                            yFloor -= 2
+                        elif block1 in WATER_CODES or block2 in WATER_CODES:
                             return (MAX_HEIGHT, MAX_HEIGHT, True)
                         else:
                             break
@@ -122,10 +126,15 @@ class Builder:
                     maxY = max(maxY, yFloor)
                     minY = min(minY, yFloor)
             sendBlocks()
-            return (minY, maxY - 1, False)
+            return (minY - 1, maxY - 1, False)
 
         def buildFoundationsInRegion(x1: int, z1: int, x2: int, z2: int, floorY):
             smallX, bigX = min(x1, x2), max(x1, x2)
+            smallZ, bigZ = min(z1, z2), max(z1, z2)
+
+            midX, midZ = smallX + (bigX - smallX) // 2, smallZ + (bigZ - smallZ) // 2
+            midY = findHeight(midX, midZ)[0]
+            foundation_material = world_slice.getBlockAt((midX, midY - 1,midZ))
 
             for x in range(smallX, bigX + 1):
                 if x - smallX % 20 == 0:
@@ -134,10 +143,10 @@ class Builder:
                             100 * (x - smallX) / (bigX - smallX)
                         )
                     )
-                for z in range(min(z1, z2), max(z1, z2) + 1):
-                    for y in range(findHeight(x, z)[0], floorY + 1):
+                for z in range(smallZ, bigZ + 1): #type: int
+                    for y in range(findHeight(x, z)[0], floorY + 1): #type: int
                         placeBlockBatched(
-                            x, y, z, block_codes.BEDROCK.value, BLOCK_BATCH_SIZE
+                            x, y, z, foundation_material, BLOCK_BATCH_SIZE
                         )
             sendBlocks()
 
@@ -192,9 +201,9 @@ class Builder:
         accum = 0
         xRepeatedAlready = [0] * site.raw_x_length
         xRepeatCount = [0] * site.raw_x_length
-        for x in range(site.raw_x_length):
+        for x in range(site.raw_x_length): #type: int
             xRepeatedAlready[x] = accum
-            for p in range(pointer, len(site.repeaterXs)):
+            for p in range(pointer, len(site.repeaterXs)): #type: int
                 if site.repeaterXs[p] == x:
                     accum += 1
                     xRepeatCount[x] += 1
@@ -208,9 +217,9 @@ class Builder:
         accum = 0
         zRepeatedAlready = [0] * site.raw_z_length
         zRepeatCount = [0] * site.raw_z_length
-        for z in range(site.raw_z_length):
+        for z in range(site.raw_z_length): #type: int
             zRepeatedAlready[z] = accum
-            for p in range(pointer, len(site.repeaterZs)):
+            for p in range(pointer, len(site.repeaterZs)): #type: int
                 if site.repeaterZs[p] == z:
                     accum += 1
                     zRepeatCount[z] += 1
@@ -229,7 +238,7 @@ class Builder:
         with open(building.filePath()) as csvfile:
             buildingReader = reader(csvfile, delimiter=",", quotechar='"')
 
-            for block in buildingReader:
+            for block in buildingReader: #type: List[int,int,int,int,int,str]
                 blockType = block[5]  # (int(block[3]), int(block[4]))
                 x = int(block[site.building_map_x_index])
                 y = int(block[1])
@@ -241,17 +250,17 @@ class Builder:
                 buildBlockRotated(blockType, xShifted, y, zShifted)
 
                 # Repeat block if x is a repeated column
-                for xRepeat in range(1, xRepeatCount[x] + 1):
+                for xRepeat in range(1, xRepeatCount[x] + 1): #type: int
                     buildBlockRotated(blockType, xShifted + xRepeat, y, zShifted)
 
                     # Add in diagonals if both x and z are repeated
-                    for zRepeat in range(1, zRepeatCount[z] + 1):
+                    for zRepeat in range(1, zRepeatCount[z] + 1): #type: int
                         buildBlockRotated(
                             blockType, xShifted + xRepeat, y, zShifted + zRepeat
                         )
 
                 # Repeat block if z is a repeated row
-                for zRepeat in range(1, zRepeatCount[z] + 1):
+                for zRepeat in range(1, zRepeatCount[z] + 1): #type: int
                     buildBlockRotated(blockType, xShifted, y, zShifted + zRepeat)
 
         
@@ -280,7 +289,7 @@ class Builder:
             return False
 
         x_center, z_center = self.sites[-1].calc_adjacent_location(
-            orientation,
+            buildOnWhichSide,
             gapBetweenBuildings,
             orientation,
             building,
@@ -304,18 +313,19 @@ class Builder:
         building_location_types: List[Tuple[int, building_types]],
         facing_directions: List[orientations],
         building_radii: List[int],
+        building_style: building_styles = building_styles.UNKNOWN
     ):
         building_maps = buildings()
 
-        for building_location_type in building_location_types:
+        for building_location_type in building_location_types: #type: Tuple[int, building_types]
 
             location_index: int = building_location_type[0]
             building_type: building_types = building_location_type[1]
             diameter: int = building_radii[location_index] * 2
             facing_direction: orientations = facing_directions[location_index]
 
-            structure: building = building_maps.getBiggestByTypeAndSize(
-                building_type, diameter, diameter
+            structure: building = building_maps.getBiggestByTypeStyleAndSize(
+                building_type, building_style, diameter, diameter, True
             )
 
             if structure is not None:
@@ -339,7 +349,7 @@ class Builder:
 
     @classmethod
     @Timer(text="Analyze and created ran in {:.2f} seconds")
-    def analyze_and_create(cls, locations: List[int], building_radii: List[int]):
+    def analyze_and_create(cls, locations: List[int], building_radii: List[int], building_style: building_styles = building_styles.UNKNOWN ):
 
         builder = cls()
 
@@ -359,10 +369,71 @@ class Builder:
 
         # bfs search for which building type in which location
         building_location_types = building_site.calc_building_types(
-            distances, NUMBER_OF_FAMILIES_IN_A_FLAT
+            distances, building_radii, NUMBER_OF_FAMILIES_IN_A_FLAT, building_style
         )
 
         # Build the buildings
         builder.create_village(
-            locations, building_location_types, facing_directions, building_radii
+            locations, building_location_types, facing_directions, building_radii, building_style
         )
+
+    @classmethod
+    def build_one_of_everything(cls, location: Tuple[int, int], ground_height: int, building_face_direction: orientations) :
+
+        runCommand(f"tp {location[0]} 100 {location[1]}")
+
+        current_location = location
+        max_diameter = MAX_BUILDING_RADIUS * 2
+        builds: buildings = buildings()
+        build_on_which_side = (orientations.SOUTH, orientations.WEST, orientations.NORTH, orientations.EAST)[building_face_direction.value]    #wnes
+        sign_on_which_side = (orientations.NORTH, orientations.EAST, orientations.SOUTH, orientations.WEST)[building_face_direction.value]    #wnes
+        move_back_direction = (orientations.EAST, orientations.SOUTH, orientations.WEST, orientations.NORTH)[building_face_direction.value]    #wnes
+
+        row_number = 0
+
+        menu = f"Max building size:{max_diameter}x{max_diameter}\n\n"
+
+        for building_style in building_styles: #type: building_styles
+            if building_style == building_styles.UNKNOWN : #type: building_styles
+                continue
+
+            row_number += 1
+            menu = menu + f"Row {row_number}: building_styles.{building_style.name.upper()}\n"
+
+            for building_type in building_types: #type: building_types
+                if building_type == building_types.UNKNOWN :
+                    continue
+
+                menu = menu + f"    building_types.{building_type.name.upper().upper()}:\n"
+
+                all_buildings = builds.getByTypeStyleAndSize(building_type, building_style, max_diameter, max_diameter)
+
+                if not all_buildings :
+                    menu = menu + f"    None found in this size/style/type.\n"
+                    continue
+
+                builder: 'Builder' = cls()
+
+                all_buildings.sort(key=lambda x:x.area())
+
+                is_first = True
+
+                for building in all_buildings: #type: building
+                    
+                    if is_first :
+                        builder.create(current_location[0], current_location[1], building_face_direction, building)
+                        is_first = False
+                    else :
+                        builder.create_adjacent_to_last(build_on_which_side, 5, building_face_direction, building)
+
+                    menu = menu + f"        {building.id: <4}: {building.name} - {building.width}x{building.depth}\n"
+
+                    sign_location = building_site.move_location(builder.last_site().sign_location, sign_on_which_side, 2)
+                    draw_sign(sign_location[0], ground_height + 1, sign_location[1], building_face_direction, building.name, building_style.name, building_type.name, f"{building.width}x{building.depth} ID:{building.id}")
+
+                sign_location = building_site.move_location(current_location, sign_on_which_side, MAX_BUILDING_RADIUS)
+                draw_sign(sign_location[0], ground_height + 1, sign_location[1], building_face_direction, building_style.name, building_type.name)
+
+                current_location = building_site.move_location(current_location, move_back_direction, max_diameter)
+  
+        print(menu)

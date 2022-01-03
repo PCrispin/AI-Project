@@ -1,4 +1,5 @@
 from classes.ENUMS.building_types import building_types
+from classes.ENUMS.building_styles import building_styles
 from typing import Tuple
 from typing import List
 
@@ -10,6 +11,7 @@ class building(object):
     height = 0
 
     type = building_types.UNKNOWN
+    style = building_styles.UNKNOWN
 
     id = -1
 
@@ -25,6 +27,7 @@ class building(object):
                  , depth: int
                  , height: int
                  , type: int
+                 , style: int
                  , id: int
                  , maxWidth: int
                  , maxDepth: int
@@ -37,10 +40,14 @@ class building(object):
         self.height = height
         self.id = id
         self.type = building_types(type)
+        self.style = building_styles(style)
         self.maxWidth = maxWidth
         self.maxDepth = maxDepth
         self.repeatableXs = list(map(int, repeatableXs.split(',')))
         self.repeatableZs = list(map(int, repeatableZs.split(',')))
+
+    def longest_side(self):
+        return max(self.width, self.depth)
 
     def area(self):
         return self.width * self.depth

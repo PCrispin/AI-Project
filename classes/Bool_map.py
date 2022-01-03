@@ -25,7 +25,7 @@ class bool_map():
 
         self.route_list = []
 
-        for rect in avoid_rects:
+        for rect in avoid_rects:  #type: Tuple[int,int,int,int]
             for i in range(rect[0] - self.minX, rect[2] - self.minX + 1):
                 for j in range(rect[1] - self.minZ, rect[3] - self.minZ + 1):
                     if 0 <= i < self.width and 0 <= j < self.depth :
@@ -35,8 +35,8 @@ class bool_map():
         sea_floor = world_slice.heightmaps['OCEAN_FLOOR']
         surface = world_slice.heightmaps['MOTION_BLOCKING_NO_LEAVES']
 
-        for i in range(world_slice.rect[2]):
-            for j in range(world_slice.rect[3]):
+        for i in range(world_slice.rect[2]): #type: int
+            for j in range(world_slice.rect[3]): #type: int
                 if sea_floor[i][j] < surface[i][j] :
                     j_m = world_slice.rect[1] + j - self.minZ
                     i_m = world_slice.rect[0] + i - self.minX
@@ -45,8 +45,8 @@ class bool_map():
                         self.matrix[i_m][j_m].avoid = True
 
         changes = []
-        for i in range(margin, self.width - margin):
-            for j in range(margin, self.depth - margin):
+        for i in range(margin, self.width - margin): #type: int
+            for j in range(margin, self.depth - margin): #type: int
                 if not self.matrix[i][j].avoid :
                     for k in range(1, margin + 1):
                         if self.matrix[i-k][j].avoid :
@@ -72,7 +72,7 @@ class bool_map():
         areas_max_x, areas_max_z = -maxsize, -maxsize
 
         site_areas = []
-        for location_index in range(len(centers)):
+        for location_index in range(len(centers)): #type: int
             radius = radii[location_index]
             center = centers[location_index]
 
@@ -91,9 +91,9 @@ class bool_map():
         world_map = bool_map(map_area, site_areas, margin_width, world_slice)
 
         if DEBUG_DRAW_WORKINGS :
-            for rect in site_areas:
-                for rect_x in range(rect[0], rect[2]):
-                    for rect_z in range(rect[1], rect[3]):
+            for rect in site_areas: #type: Tuple[int,int,int,int]
+                for rect_x in range(rect[0], rect[2]): #type: int
+                    for rect_z in range(rect[1], rect[3]): #type: int
                         rect_y = world_slice.heightmaps['MOTION_BLOCKING_NO_LEAVES'][rect_x-world_slice.rect[0]][rect_z-world_slice.rect[1]]
                         placeBlockBatched(rect_x, rect_y - 1, rect_z, block_codes.WHITE_TERRACOTTA.value, BLOCK_BATCH_SIZE)
             sendBlocks()
@@ -132,7 +132,7 @@ class bool_map():
             route = self.route_list[current_tile.already_goes_to[goes_to]]
 
             current_address = (x, z)
-            for index in range(len(route)) :
+            for index in range(len(route)) : #type: int
                 if x == route[index][0] and z == route[index][2] :
                     return has_road, True, route[0:index+1]
         else :

@@ -2391,7 +2391,7 @@
 6,29,5,156,0,"minecraft:quartz_stairs","Quartz Stairs (South, Normal)"
 4,30,5,156,0,"minecraft:quartz_stairs","Quartz Stairs (North, Upside-down)"
 5,30,4,156,0,"minecraft:quartz_stairs","Quartz Stairs (East, Upside-down)"
-5,30,5,124,0,"minecraft:redstone_lamp","Redstone Lamp (active)"
+5,30,5,123,0,"minecraft:redstone_lamp","Redstone Lamp (active)"
 5,30,6,156,0,"minecraft:quartz_stairs","Quartz Stairs (West, Upside-down)"
 6,30,5,156,0,"minecraft:quartz_stairs","Quartz Stairs (South, Upside-down)"
 4,31,5,113,0,"minecraft:nether_brick_fence","Nether Brick Fence"

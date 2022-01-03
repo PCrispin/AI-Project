@@ -1,7 +1,6 @@
 from math import sqrt
 from random import *
 import time
-import sys
 from sys import maxsize 
 from typing import List, Tuple, Dict
 from vendor.gdmc_http_client.worldLoader import WorldSlice
@@ -23,12 +22,12 @@ THRESHOLD_GAIN_FOR_REENTRY_TO_FRONTIER = 2
 LAMP_POST_SPACING = 10
 STRIPE_SPACING = 10
 
-
+ABORT_SEARCH_FOR_SITE_AFTER_ROUTE_NOT_FOUND_LIMIT = 4
 
 MAX_HEIGHT_DROP:int = 1
 MAX_DEPTH:int = 1000
 
-materials_vegetation:List[str] = [    "minecraft:grass"
+materials_vegetation:Tuple[str] = (   "minecraft:grass"
                                     , "minecraft:dandelion"
                                     , "minecraft:poppy"
                                     , "minecraft:blue_orchid"
@@ -40,26 +39,25 @@ materials_vegetation:List[str] = [    "minecraft:grass"
                                     , "minecraft:pink_tulip"
                                     , "minecraft:oxeye_daisy"
                                     , "minecraft:brown_mushroom"
-                                    , "minecraft:red_mushroom"  ]
+                                    , "minecraft:red_mushroom"  )
 
-direction_choices = [ (0, 1) , (0, -1) , (1, 0)  , (-1, 0)  ]
+direction_choices: Tuple[Tuple[int,int]] = ( (0, 1) , (0, -1) , (1, 0)  , (-1, 0)  )
 
 def create_roads( roads : List[Tuple[Tuple[int, int], Tuple[int, int]]]
                 , grid_width, door_locations: List[Tuple[int, int]]
                 , world_map: bool_map, world_slice: WorldSlice) -> List[List[int]]:
     start = time.time()
 
-    roads_routes = []
-
-    lamp_posts = []
+    roads_routes: List[List[Tuple[int,int,int]]] = []
+    no_route_found_count: Dict[Tuple[int,int], int] = {}
+    lamp_posts: List[Tuple[int,int]] = []
     lamp_post_spacing_squared = LAMP_POST_SPACING ** 2
 
     count = 0
-    no_route_found_count = {}
 
-    for road in roads:
+    for road in roads: #type: Tuple[Tuple[int, int], Tuple[int, int]]
         start_road = time.time()
-        if road[0] not in no_route_found_count or no_route_found_count[road[0]] < 4 :
+        if road[0] not in no_route_found_count or no_route_found_count[road[0]] < ABORT_SEARCH_FOR_SITE_AFTER_ROUTE_NOT_FOUND_LIMIT :
             road_route = _find_route(road[0], road[1], world_slice, world_map, grid_width)
 
             if not road_route :
@@ -77,7 +75,7 @@ def create_roads( roads : List[Tuple[Tuple[int, int], Tuple[int, int]]]
 
     find_missing_routes(roads, roads_routes)
 
-    def draw_road(x: int, y_plus_1:int, z: int, is_stripe: bool = False) :
+    def draw_road(x: int, y_plus_1: int, z: int, is_stripe: bool = False) :
         if not world_map.get_avoid_value(x, z) :
             if is_stripe :
                 placeBlockBatched(x, y_plus_1 - 1, z, block_codes.BLACK_TERRACOTTA.value, BLOCK_BATCH_SIZE)
@@ -85,9 +83,10 @@ def create_roads( roads : List[Tuple[Tuple[int, int], Tuple[int, int]]]
                 placeBlockBatched(x, y_plus_1 - 1, z, block_codes.BLACK_TERRACOTTA.value, BLOCK_BATCH_SIZE)
 
     def draw_lamp_post(x: int, y:int, z: int) :
-        for lamp_post in lamp_posts :
+        for lamp_post in lamp_posts : #type: Tuple[int,int]
             if (lamp_post[0] - x) ** 2 + (lamp_post[1] - z) ** 2 < lamp_post_spacing_squared :
                 return
+
         lamp_posts.append((x, z))
 
         if not world_map.get_avoid_value(x, z) :
@@ -97,13 +96,13 @@ def create_roads( roads : List[Tuple[Tuple[int, int], Tuple[int, int]]]
             placeBlockBatched(x, y + 3, z, block_codes.IRON_BARS.value, BLOCK_BATCH_SIZE)
             placeBlockBatched(x, y + 4, z, block_codes.TORCH.value, BLOCK_BATCH_SIZE)
 
-    for route in roads_routes:
+    for route in roads_routes: #type: List[Tuple[int,int,int]]
         route_length = len(route)
         
         if route_length > 1 :
             continuous_e_w_distance = 0
             continuous_n_s_distance = 0
-            for index in range(route_length + 1):
+            for index in range(route_length + 1): #type: int
                 if index == route_length :
                     #So that adjacent bricks next to last brick in the path are drawn.
                     brick_x, brick_y, brick_z = route[-2] 
@@ -137,7 +136,7 @@ def create_roads( roads : List[Tuple[Tuple[int, int], Tuple[int, int]]]
 
     distances = [[0 for i in range(len(door_locations))] for i in range(len(door_locations))]
 
-    for route in roads_routes:
+    for route in roads_routes: #type: List[Tuple[int,int,int]]
         if route :
             ind1 = door_locations.index((route[0][0], route[0][2]))
             ind2 = door_locations.index((route[-1][0], route[-1][2]))
@@ -150,7 +149,7 @@ def create_roads( roads : List[Tuple[Tuple[int, int], Tuple[int, int]]]
     return distances
 
 def _find_route(origin: Tuple[int, int], destination: Tuple[int, int], world_slice: WorldSlice
-                     , world_map: bool_map, grid_width: int) -> List[Tuple[int,int]]:
+                     , world_map: bool_map, grid_width: int) -> List[Tuple[int,int,int]]:
 
     def findHeight(x: int, z: int) -> Tuple[int, int]:
         wX, wZ = x - world_slice.rect[0], z - world_slice.rect[1]
@@ -175,7 +174,7 @@ def _find_route(origin: Tuple[int, int], destination: Tuple[int, int], world_sli
     area_max_x, area_max_z = max(origin_x, destination_x) + MAX_DETOUR, max(origin_z, destination_z) + MAX_DETOUR
 
     if DEBUG_DRAW_WORKINGS : 
-        for i in range(2, 10) :
+        for i in range(2, 10) : #type: int
             setBlock(origin_x, origin_y + i, origin_z, block_codes.IRON_BARS.value)
             setBlock(destination_x, destination_y + i, destination_z, block_codes.IRON_BARS.value)
         setBlock(origin_x, origin_y + 10, origin_z, block_codes.TORCH.value)
@@ -183,7 +182,7 @@ def _find_route(origin: Tuple[int, int], destination: Tuple[int, int], world_sli
 
     def finish_up(route: List[Tuple[int,int]]) -> List[Tuple[int,int]]:
         if DEBUG_DRAW_WORKINGS : 
-            for i in range(2, 11) :
+            for i in range(2, 11) : #type: int
                 setBlock(origin_x, origin_y + i, origin_z, block_codes.AIR.value)
                 setBlock(destination_x, destination_y + i, destination_z, block_codes.AIR.value)
         return route
@@ -203,7 +202,7 @@ def _find_route(origin: Tuple[int, int], destination: Tuple[int, int], world_sli
 
     spread = []
     h= abs((grid_width - 1) / 2)
-    for k in range(grid_width):
+    for k in range(grid_width): #type: int
         spread.append(MAX_SNAP_TO_GRID_PENALTY * min(k,-k % grid_width) / (2 * h)) 
     # spread for 15: [1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.2, 2.0, 1.8, 1.6, 1.4, 1.2, 1.0]
 
@@ -259,7 +258,7 @@ def _find_route(origin: Tuple[int, int], destination: Tuple[int, int], world_sli
             min_heuristic :int = maxsize
             min_i: int = -1
 
-            for i in range(len(frontier)):
+            for i in range(len(frontier)): #type: int
                 if frontier[i].total < min_total and frontier[i].heuristic < min_heuristic :
                     min_i = i
                     min_total = frontier[i].total
@@ -308,7 +307,7 @@ def _find_route(origin: Tuple[int, int], destination: Tuple[int, int], world_sli
             set_route(focus_tile, focus_tile.depth)    
             return finish_up(route)
 
-        for direction_values in direction_choices:
+        for direction_values in direction_choices: #type: Tuple[int,int]
             new_x, new_z = focus_tile.x + direction_values[0], focus_tile.z + direction_values[1]
 
             if area_min_x <= new_x < area_max_x and area_min_z <= new_z < area_max_z :
@@ -318,7 +317,7 @@ def _find_route(origin: Tuple[int, int], destination: Tuple[int, int], world_sli
                 if road_already_goes_to_destination :
                     depth = focus_tile.depth + len(existing_route)        
                     print(f"Partial route taken from existing road {existing_route[-1]}-{existing_route[0]} - borrowed route length: {len(existing_route)}")
-                    for address in existing_route:
+                    for address in existing_route: #type: Tuple[int, int, int]
                         route.append(address)
                     set_route(focus_tile, depth)
                     return finish_up(route)
@@ -364,14 +363,14 @@ def _find_route(origin: Tuple[int, int], destination: Tuple[int, int], world_sli
     return finish_up([])
 
 def find_missing_routes(roads: List[Tuple[Tuple[int, int], Tuple[int, int]]]
-                        , roads_routes: List[Tuple[Tuple[int, int]]]) :
+                        , roads_routes: List[List[Tuple[int, int, int]]]) :
     #Breadth First Search to replace missing roads - eg no road from A->C so find A->B->C
     # roads is simply start, end addresses
     # road route is list of address of every brick on route
 
     destinations: Dict[Tuple[int, int], List[Tuple[Tuple[int, int], int]]] = {}
 
-    def add_destination(origin: Tuple[int,int,int], to: Tuple[int, int], distance: int) :
+    def add_destination(origin: Tuple, to: Tuple[int, int], distance: int) :
         if len(origin) == 3 :
             origin_2d, to_2d = (origin[0], origin[2]), (to[0], to[2])
         else :
@@ -382,8 +381,8 @@ def find_missing_routes(roads: List[Tuple[Tuple[int, int], Tuple[int, int]]]
         else:
             destinations[origin_2d] = [(to_2d, distance)]
 
-    def get_road_route(origin: Tuple[int,int], to: Tuple[int, int]) -> List[Tuple[int, int]]:
-        for road_route in roads_routes:
+    def get_road_route(origin: Tuple[int,int], to: Tuple[int, int]) -> List[Tuple[int, int, int]]:
+        for road_route in roads_routes: #type: List[Tuple[int, int, int]]
             if road_route :
                 if origin[0] == road_route[0][0] and origin[1] == road_route[0][2] \
                     and to[0] == road_route[-1][0] and to[1] == road_route[-1][2]  :
@@ -396,12 +395,12 @@ def find_missing_routes(roads: List[Tuple[Tuple[int, int], Tuple[int, int]]]
                     return reverse_route
         return []
 
-    for road_route in roads_routes:
+    for road_route in roads_routes: #type: List[Tuple[int, int, int]]
         if road_route :
             add_destination(road_route[0], road_route[-1], len(road_route))
             add_destination(road_route[-1], road_route[0], len(road_route))
 
-    for index in range(len(roads_routes)):
+    for index in range(len(roads_routes)): #type: int
         #no route found but both the origin and destination have other routes
         if not roads_routes[index] \
             and roads[index][0] in destinations \
@@ -409,21 +408,21 @@ def find_missing_routes(roads: List[Tuple[Tuple[int, int], Tuple[int, int]]]
 
             origin = roads[index][0]
             destination = roads[index][1]
-            overall_winning_distance = sys.maxsize
+            overall_winning_distance = maxsize
 
-            def recursive_bfs(current_node: Tuple[int,int], distance, parents:List [Tuple[int,int]]) -> Tuple[List[Tuple[int,int]], int] :
+            def recursive_bfs(current_node: Tuple[int,int], distance, parents:List [Tuple[int,int,int]]) -> Tuple[List[Tuple[int,int,int]], int] :
                 nonlocal overall_winning_distance
                 
                 if current_node[0] == destination[0] and current_node[1] == destination[1] :
                     return [current_node], distance
 
-                winning_distance = sys.maxsize
+                winning_distance = maxsize
                 winning_route = []
 
                 if distance > overall_winning_distance :
                     return winning_route, winning_distance
 
-                for child_node, child_distance in destinations[current_node]:
+                for child_node, child_distance in destinations[current_node]: #type:  Tuple[int, int, int], int
                     if child_node not in parents :
                         
                         #when adding legs, the last square of the previous leg and first in the new leg are the same
@@ -446,12 +445,12 @@ def find_missing_routes(roads: List[Tuple[Tuple[int, int], Tuple[int, int]]]
             route, dist = recursive_bfs(origin, 0, [])
             route.reverse()
 
-            if dist != sys.maxsize and route :
+            if dist != maxsize and route :
                 description = f"\nFound route from [{origin[0]}, {origin[1]}] to [{destination[0]}, {destination[1]}] via "
 
                 #len(route) should never be 2 or less because means there was a direct route afterall...
                 road_route = []
-                for leg_index in range(len(route) - 1):
+                for leg_index in range(len(route) - 1): #type: int
                     next_leg = get_road_route(route[leg_index], route[leg_index+1])
 
                     if road_route and next_leg :
