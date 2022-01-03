@@ -49,11 +49,18 @@ def run_epochs(g_representation: graph) -> BuildingLocations:
             locations.locations[-1].build_coordinates
         )
 
+    village_biome = determine_village_biome(locations)
+    return locations
+
+
+def determine_village_biome(locations: BuildingLocations):
+    biome_lst = []
     for location in locations.locations:
         biome_id = locations.get_biome(location=location, y_index=100)
         biome_region = biome_regions(BIOME_MAP_DICTIONARY.get(biome_id))
-        print(biome_region.name)
-    return locations
+        biome_lst.append(biome_region.value)
+    best_biome = biome_regions(max(set(biome_lst), key=biome_lst.count))
+    return best_biome
 
 
 def generate_building_location_through_genetic_algorithm(
