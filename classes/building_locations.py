@@ -13,12 +13,14 @@ USE_BATCH_PAINTING = True
 class BuildingLocations:
     """Class containing all proposed building locations"""
 
-    def __init__(self) -> None:
+    def __init__(self, world_slice) -> None:
         self.total_fitness = 0
         self.water_fitness = 0
         self.building_fitness = 0
         self.flatness_fitness = 0
         self.locations = []
+        self.world_slice = world_slice
+        self.biome: int = 0
 
     def add_building(self, location: LocationGenome):
         """Adds a building location to the class
@@ -42,7 +44,19 @@ class BuildingLocations:
         )
         self.locations.append(location)
 
-    def evaluate(self):
+    def get_biome(self, location: LocationGenome, y_index: int = 100) -> int:
+        if location not in self.locations:
+            raise ValueError(
+                "Attempting to access biome information for a location that doesnt exist"
+            )
+
+        x_value = location.get_vector_coord()[0]
+        z_value = location.get_vector_coord()[1]
+        y_value = y_index
+
+        return self.world_slice.getBiomeAt((x_value, y_value, z_value))
+
+    def _evaluate(self):
         """Evaluates all building locations"""
         for member in self.locations:
             self.total_fitness += member.fitness

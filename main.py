@@ -3,6 +3,9 @@
 import sys
 import os
 import random
+from typing import Tuple
+from classes.ENUMS.biome_ids import biome_regions
+from classes.ENUMS.block_codes import block_codes
 from classes.Timer import Timer
 from classes.building_locations import BuildingLocations
 from classes.Graph import graph
@@ -10,7 +13,16 @@ from classes.http_interface import get_world_state
 from classes.Location_Genome import LocationGenome
 from classes.Population import Population
 from classes.misc_functions import rectangles_overlap
-from constants import AREA, BUILDING_NUMBER, GENERATIONS, POPULATION_SIZE, RANDOM_SEED
+from constants import (
+    AREA,
+    BIOME_BLOCK_MAP_DICTIONARY,
+    BIOME_MAP_DICTIONARY,
+    BUILDING_NUMBER,
+    GENERATIONS,
+    POPULATION_SIZE,
+    RANDOM_SEED,
+)
+from vendor.gdmc_http_client.worldLoader import WorldSlice
 
 
 random.seed(RANDOM_SEED)
@@ -26,7 +38,9 @@ def run_epochs(g_representation: graph) -> BuildingLocations:
         Building_Locations: A class containing fitness building locations
 
     """
-    locations = BuildingLocations()
+    # get the world slice to add to the building_locations
+
+    locations = BuildingLocations(world_slice=WorldSlice(AREA))
     for _ in range(BUILDING_NUMBER):
         fitess = generate_building_location_through_genetic_algorithm(
             g_representation=g_representation
@@ -37,7 +51,27 @@ def run_epochs(g_representation: graph) -> BuildingLocations:
         g_representation.buildings_coords.append(
             locations.locations[-1].build_coordinates
         )
+
+    village_biome, variable_block_type = determine_village_biome(locations=locations)
     return locations
+
+
+def determine_village_biome(
+    locations: BuildingLocations,
+) -> Tuple[biome_regions, block_codes]:
+
+    try:
+        biome_lst = []
+        for location in locations.locations:
+            biome_id = locations.get_biome(location=location, y_index=100)
+            biome_region = biome_regions(BIOME_MAP_DICTIONARY.get(biome_id))
+            biome_lst.append(biome_region.value)
+        best_biome = biome_regions(max(set(biome_lst), key=biome_lst.count))
+        block_type = BIOME_BLOCK_MAP_DICTIONARY.get(best_biome)
+
+        return best_biome, block_type
+    except ValueError:
+        return biome_regions.DESERT, block_codes.SANDSTONE
 
 
 def generate_building_location_through_genetic_algorithm(

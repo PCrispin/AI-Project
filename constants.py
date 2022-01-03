@@ -1,5 +1,7 @@
 """Constants for the project"""
 
+from classes.ENUMS.biome_ids import biome_regions
+from classes.ENUMS.block_codes import block_codes
 from typing import Tuple
 
 MAX_BUILDING_RADIUS = 13  # SHOULD BE ODD
@@ -9,7 +11,7 @@ BUILDING_DISTANCE_WEIGHTING = 2
 FLATNESS_FITNESS_WEIGHTING = 1
 DEFAULT_MUTATION_RATE = 1 / 6
 DEFAULT_POPULATION_SIZE = 5
-GENERATIONS = 30
+GENERATIONS = 10
 BUILDING_NUMBER = 12
 POPULATION_SIZE = 40
 AREA = (0, 0, 256, 256)  # x position, z position, x size, z size
@@ -38,8 +40,55 @@ NUMBER_OF_FAMILIES_IN_A_FLAT:int = 5
 DRIVE_LENGTH:int = 1
 BUILDING_MARGIN:int = 3
 
-RANDOM_SEED:int = 10
+RANDOM_SEED = 10
 
+
+# Dictionary mapping biome ID to internal biome regional id
+BIOME_MAP_DICTIONARY = dict(
+    {
+        4: 1,
+        18: 1,
+        27: 1,
+        28: 1,
+        29: 1,
+        34: 1,
+        132: 1,
+        155: 1,
+        156: 1,
+        157: 1,
+        179: 1,
+        180: 1,
+        1: 2,
+        129: 2,
+        2: 3,
+        17: 3,
+        130: 3,
+        12: 4,
+        13: 4,
+        140: 4,
+        26: 4,
+        30: 4,
+        31: 4,
+        42: 4,
+        45: 4,
+        158: 4,
+        35: 5,
+        36: 5,
+        163: 5,
+        164: 5,
+    }
+)
+
+# Dictionary mapping regions to variable block type
+BIOME_BLOCK_MAP_DICTIONARY = dict(
+    {
+        biome_regions.FOREST: block_codes.DARK_OAK_WOOD,
+        biome_regions.PLAINS: block_codes.DARK_OAK_WOOD,
+        biome_regions.DESERT: block_codes.SANDSTONE,
+        biome_regions.COLD: block_codes.EMERALD_ORE,
+        biome_regions.SAVANNA: block_codes.BROWN_TERRACOTTA,
+    }
+)
 ENCOURAGE_PENALTY:float = 0.5
 MAX_SNAP_TO_GRID_PENALTY:float = 2
 NEAR_OBSTACLE_PENALTY:float = 1
