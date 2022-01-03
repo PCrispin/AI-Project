@@ -85,3 +85,11 @@ class biome_ids(ExtendedEnum):
     LUSH_CAVES = 187
     DRIPSTONE_CAVES = 188
     STONY_PEAKS = 189
+
+
+class biome_regions(ExtendedEnum):
+    FOREST = 1
+    PLAINS = 2
+    DESERT = 3
+    COLD = 4
+    SAVANNA = 5

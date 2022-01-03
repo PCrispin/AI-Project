@@ -3,7 +3,7 @@
 import sys
 import os
 import random
-from classes.ENUMS.biome_ids import biome_ids
+from classes.ENUMS.biome_ids import biome_ids, biome_regions
 from classes.Timer import Timer
 from classes.building_locations import BuildingLocations
 from classes.Graph import graph
@@ -11,7 +11,14 @@ from classes.http_interface import get_world_state
 from classes.Location_Genome import LocationGenome
 from classes.Population import Population
 from classes.misc_functions import rectangles_overlap
-from constants import AREA, BUILDING_NUMBER, GENERATIONS, POPULATION_SIZE, RANDOM_SEED
+from constants import (
+    AREA,
+    BIOME_MAP_DICTIONARY,
+    BUILDING_NUMBER,
+    GENERATIONS,
+    POPULATION_SIZE,
+    RANDOM_SEED,
+)
 from vendor.gdmc_http_client.worldLoader import WorldSlice
 
 
@@ -44,7 +51,8 @@ def run_epochs(g_representation: graph) -> BuildingLocations:
 
     for location in locations.locations:
         biome_id = locations.get_biome(location=location, y_index=100)
-        print(biome_ids(biome_id))
+        biome_region = biome_regions(BIOME_MAP_DICTIONARY.get(biome_id))
+        print(biome_region.name)
     return locations
 
 
