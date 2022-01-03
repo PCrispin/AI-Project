@@ -53,7 +53,8 @@ def run_epochs(g_representation: graph) -> BuildingLocations:
         )
 
     village_biome, variable_block_type = determine_village_biome(locations=locations)
-    return locations
+
+    return locations, variable_block_type
 
 
 def determine_village_biome(
@@ -121,9 +122,9 @@ def main(debug=False):
         block_print()
     g_start = get_world_state(area=AREA)
     # print_all_fitness_graphs(g=g_start)
-    buildings = run_epochs(g_start)
+    buildings, variable_block_type = run_epochs(g_start)
     remove_overlapping_buildings(buildings)
-    buildings.paint_buildings()
+    buildings.paint_buildings(variable_block_type)
 
     if not debug:
         enable_print()

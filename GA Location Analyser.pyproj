@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>234f0147-5a2c-4c81-b6e6-1782c8ea9790</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>main.py</StartupFile>
+    <StartupFile>mainBuilder.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -25,7 +25,9 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="classes\ENUMS\biome_ids.py" />
     <Compile Include="classes\ENUMS\fitness.py" />
+    <Compile Include="classes\ENUMS\variable_blocks.py" />
     <Compile Include="classes\Road_Builder.py">
       <SubType>Code</SubType>
     </Compile>
@@ -122,72 +124,69 @@
     <Content Include="classes\__pycache__\Types.cpython-38.pyc" />
     <Content Include="classes\__pycache__\Types.cpython-39.pyc" />
     <Content Include="data\building_maps\buildings.json" />
-    <Content Include="data\building_maps\Factory^Log_-_Medieval_Sawmill_15x25x11.csv" />
+    <Content Include="data\building_maps\Factory^Custom_-_Clash_Of_Clans_Gold_Storage_7_11x11x7.csv" />
+    <Content Include="data\building_maps\Factory^Custom_-_Futuristic_Custom_Home_5_11x11x11.csv" />
+    <Content Include="data\building_maps\Factory^Custom_-_Medieval_Sawmill_15x25x11.csv" />
+    <Content Include="data\building_maps\Factory^Custom_-_Medium_Custom_Factory_2_17x16x29.csv" />
+    <Content Include="data\building_maps\Factory^Custom_-_Medium_Custom_Factory_3_17x18x25.csv" />
     <Content Include="data\building_maps\Factory^Log_-_Medieval_World_Lumbermill_26x34x13.csv" />
     <Content Include="data\building_maps\Factory^Log_-_Medium_Log_Factory_1_15x20x8.csv" />
-    <Content Include="data\building_maps\Factory^Log_-_Medium_Log_Factory_2_17x16x29.csv" />
-    <Content Include="data\building_maps\Factory^Log_-_Medium_Log_Factory_3_17x18x25.csv" />
     <Content Include="data\building_maps\Factory^Modern_-_Cc_Generals_War_Factory_61x53x27.csv" />
-    <Content Include="data\building_maps\Factory^Modern_-_Clash_Of_Clans_Gold_Storage_7_11x11x7.csv" />
     <Content Include="data\building_maps\Factory^Modern_-_Dystopian_Tank_Factory_14x51x26.csv" />
-    <Content Include="data\building_maps\Factory^Modern_-_Futuristic_Modern_Home_5_11x11x11.csv" />
     <Content Include="data\building_maps\Factory^Modern_-_Large_Modern_Factory_1_21x30x13.csv" />
     <Content Include="data\building_maps\Factory^Modern_-_Modern_Factory_Building_64x64x62.csv" />
     <Content Include="data\building_maps\Factory^Modern_-_Oversized_Modern_Factory_1_32x16x19.csv" />
     <Content Include="data\building_maps\Factory^Modern_-_Pokemon_Factory_33x15x17.csv" />
     <Content Include="data\building_maps\Factory^Modern_-_Small_Modern_Brewery_32x16x19.csv" />
     <Content Include="data\building_maps\Factory^Sand_-_Large_Sand_Factory_1_23x21x22.csv" />
-    <Content Include="data\building_maps\Flats^Log_-_Large_Log_Flats_1_19x25x26.csv" />
-    <Content Include="data\building_maps\Flats^Log_-_Medium_Log_Flats_1_17x17x20.csv" />
+    <Content Include="data\building_maps\Flats^Custom_-_Large_Custom_Flats_1_19x25x26.csv" />
+    <Content Include="data\building_maps\Flats^Custom_-_Medium_Custom_Flats_1_17x17x20.csv" />
+    <Content Include="data\building_maps\Flats^Custom_-_Small_Custom_Flats_1_12x12x14.csv" />
     <Content Include="data\building_maps\Flats^Modern_-_Large_Modern_Flats_1_24x24x25.csv" />
     <Content Include="data\building_maps\Flats^Modern_-_Medium_Modern_Flats_1_19x19x25.csv" />
-    <Content Include="data\building_maps\Flats^Modern_-_Small_Modern_Flats_1_12x12x14.csv" />
     <Content Include="data\building_maps\Flats^Sand_-_Large_Sand_Flats_1_21x11x34.csv" />
+    <Content Include="data\building_maps\House^Custom_-_Large_Custom_House_1_22x13x6.csv" />
+    <Content Include="data\building_maps\House^Custom_-_Medium_Custom_House_1_14x16x10.csv" />
+    <Content Include="data\building_maps\House^Custom_-_Small_Custom_House_1_11x11x6.csv" />
+    <Content Include="data\building_maps\House^Custom_-_Small_Custom_House_2_10x9x8.csv" />
+    <Content Include="data\building_maps\House^Custom_-_Small_Custom_House_3_11x11x9.csv" />
+    <Content Include="data\building_maps\House^Custom_-_Small_Custom_House_4_13x14x10.csv" />
+    <Content Include="data\building_maps\House^Custom_-_Wooden_Survival_House_4_20x15x12.csv" />
     <Content Include="data\building_maps\House^Log_-_Medieval_Town_Medium_House_15x17x13.csv" />
     <Content Include="data\building_maps\House^Log_-_Medieval_Town_Small_House_2_9x11x8.csv" />
     <Content Include="data\building_maps\House^Log_-_Medium_Log_House_1_7x15x12.csv" />
     <Content Include="data\building_maps\House^Log_-_Medium_Log_House_2_15x15x11.csv" />
-    <Content Include="data\building_maps\House^Log_-_Small_Log_House_1_11x11x6.csv" />
-    <Content Include="data\building_maps\House^Log_-_Small_Log_House_2_10x9x8.csv" />
     <Content Include="data\building_maps\House^Log_-_Small_Medieval_Home_4_7x8x10.csv" />
-    <Content Include="data\building_maps\House^Log_-_Wooden_Survival_House_4_20x15x12.csv" />
-    <Content Include="data\building_maps\House^Modern_-_Large_Modern_House_1_22x13x6.csv" />
-    <Content Include="data\building_maps\House^Modern_-_Large_Modern_House_2_16x21x8.csv" />
-    <Content Include="data\building_maps\House^Modern_-_Medium_Modern_House_1_14x16x10.csv" />
-    <Content Include="data\building_maps\House^Modern_-_Small_Modern_House_1_11x11x9.csv" />
-    <Content Include="data\building_maps\House^Modern_-_Small_Modern_House_2_13x14x10.csv" />
     <Content Include="data\building_maps\House^Sand_-_Small_Sand_House_1_9x6x9.csv" />
     <Content Include="data\building_maps\House^Sand_-_Small_Sand_House_2_11x12x10.csv" />
     <Content Include="data\building_maps\House^Sand_-_Small_Sand_House_3_13x13x6.csv" />
+    <Content Include="data\building_maps\Restaurant^Custom_-_Large_Custom_Restaurant_1_18x20x12.csv" />
+    <Content Include="data\building_maps\Restaurant^Custom_-_Small_Custom_Restaurant_1_22x13x6.csv" />
+    <Content Include="data\building_maps\Restaurant^Custom_-_Small_Custom_Restaurant_2_14x12x13.csv" />
+    <Content Include="data\building_maps\Restaurant^Custom_-_Starbucks_Custom_15x17x9.csv" />
+    <Content Include="data\building_maps\Restaurant^Custom_-_Taco_Bell_Restaurant_18x18x12.csv" />
     <Content Include="data\building_maps\Restaurant^Log_-_Large_Log_Restaurant_1_20x20x14.csv" />
     <Content Include="data\building_maps\Restaurant^Modern_-_Burger_King_27x24x16.csv" />
     <Content Include="data\building_maps\Restaurant^Modern_-_Kfc_Restaurant_39x26x28.csv" />
-    <Content Include="data\building_maps\Restaurant^Modern_-_Large_Modern_Restaurant_1_18x20x12.csv" />
     <Content Include="data\building_maps\Restaurant^Modern_-_Mcdonalds_Restaurant_43x43x16.csv" />
-    <Content Include="data\building_maps\Restaurant^Modern_-_Medium_Modern_Restaurant_1_14x17x12.csv" />
-    <Content Include="data\building_maps\Restaurant^Modern_-_Small_Modern_Restaurant_22x13x6.csv" />
-    <Content Include="data\building_maps\Restaurant^Modern_-_Small_Modern_Restaurant_2_14x12x13.csv" />
-    <Content Include="data\building_maps\Restaurant^Modern_-_Starbucks_Modern_15x17x9.csv" />
-    <Content Include="data\building_maps\Restaurant^Modern_-_Taco_Bell_Restaurant_18x18x12.csv" />
+    <Content Include="data\building_maps\Restaurant^Sand_-_Medium_Sand_Restaurant_1_14x17x12.csv" />
+    <Content Include="data\building_maps\Shop^Custom_-_Apple_Store_15x17x11.csv" />
+    <Content Include="data\building_maps\Shop^Custom_-_Large_Custom_Shop_1_22x19x9.csv" />
+    <Content Include="data\building_maps\Shop^Custom_-_Lego_Pet_Shop_16x15x18.csv" />
+    <Content Include="data\building_maps\Shop^Custom_-_Medium_Custom_Shop_1_18x13x16.csv" />
+    <Content Include="data\building_maps\Shop^Custom_-_Small_Custom_Shop_1_11x11x11.csv" />
     <Content Include="data\building_maps\Shop^Log_-_French_Riviera_Boutique_Facade_1_31x29x27.csv" />
     <Content Include="data\building_maps\Shop^Log_-_French_Riviera_Flower_Shop_Facade_21x11x34.csv" />
-    <Content Include="data\building_maps\Shop^Log_-_Medium_Log_Shop_1_18x13x16.csv" />
     <Content Include="data\building_maps\Shop^Log_-_Wild_West_Shops_29x17x15.csv" />
-    <Content Include="data\building_maps\Shop^Modern_-_Apple_Store_15x17x11.csv" />
-    <Content Include="data\building_maps\Shop^Modern_-_Large_Modern_Shop_1_22x19x9.csv" />
-    <Content Include="data\building_maps\Shop^Modern_-_Lego_Pet_Shop_16x15x18.csv" />
-    <Content Include="data\building_maps\Shop^Modern_-_Modern_Book_Shop_12x12x14.csv" />
     <Content Include="data\building_maps\Shop^Modern_-_Modern_Shopping_Mall_97x56x29.csv" />
     <Content Include="data\building_maps\Shop^Modern_-_Modern_Supermarket_2_32x64x13.csv" />
-    <Content Include="data\building_maps\Shop^Modern_-_Small_Modern_Shop_2_11x11x11.csv" />
-    <Content Include="data\building_maps\Shop^Sand_-_Large_Sand_Shop_1_21x11x34.csv" />
-    <Content Include="data\building_maps\Town_Hall^Log_-_Large_Log_Town_Hall_1_21x15x16.csv" />
-    <Content Include="data\building_maps\Town_Hall^Log_-_Large_Log_Town_Hall_2_19x25x35.csv" />
-    <Content Include="data\building_maps\Town_Hall^Log_-_Medium_Log_Town_Hall_1_15x12x13.csv" />
-    <Content Include="data\building_maps\Town_Hall^Log_-_Medium_Log_Town_Hall_2_19x19x27.csv" />
+    <Content Include="data\building_maps\Shop^Sand_-_Medium_Shop_1_18x18x13.csv" />
+    <Content Include="data\building_maps\Town_Hall^Custom_-_Large_Custom_Town_Hall_1_21x15x16.csv" />
+    <Content Include="data\building_maps\Town_Hall^Custom_-_Large_Custom_Town_Hall_2_19x25x35.csv" />
+    <Content Include="data\building_maps\Town_Hall^Custom_-_Medium_Custom_Town_Hall_1_15x12x13.csv" />
+    <Content Include="data\building_maps\Town_Hall^Custom_-_Medium_Custom_Town_Hall_2_19x19x27.csv" />
     <Content Include="data\building_maps\Town_Hall^Modern_-_Medium_Modern_Town_Hall_1_16x16x30.csv" />
     <Content Include="data\building_maps\Town_Hall^Sand_-_Large_Sand_Town_Hall_1_21x21x18.csv" />
-    <Content Include="data\building_maps\Town_Hall^Sand_-_Medium_Sand_Town_Hall_1_18x18x13.csv" />
     <Content Include="data\minecraft_maps\Test 1\advancements\d8ed8f22-06ca-4f1e-9413-25827b394f9a.json" />
     <Content Include="data\minecraft_maps\Test 1\data\capabilities.dat" />
     <Content Include="data\minecraft_maps\Test 1\data\raids.dat" />

@@ -23,6 +23,8 @@ class block_codes(ExtendedEnum):
         Enum (Int): Block code material
     """
 
+    UNKNOWN = ""
+
     WATER = "minecraft:water"
     FLOWING_WATER = "minecraft:flowing_water"
     ICE = "minecraft:ice"

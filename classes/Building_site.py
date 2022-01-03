@@ -423,7 +423,7 @@ class building_site(object):
 
                 if house_count == total_no_of_houses and winning_score != maxsize:
                     mins, sec = divmod(time.time() - start_bfs, 60)
-                    print(f"Find optimum location {100*i/available_locations_count:.0f}% complete  {mins:.0f}m {sec:.0f}s Winning score: {winning_score}")
+                    print(f"Find optimum locations {100*i/available_locations_count:.0f}% complete  {mins:.0f}m {sec:.0f}s Winning score: {winning_score}")
 
                 if building_types.HOUSE in building_types_fit_in_sites[locations_list[i]]:
                     location = locations_list.pop(i)

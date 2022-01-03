@@ -27,7 +27,7 @@ class building(object):
                  , height: int
                  , type: int
                  , style: int
-                 , bricks: str
+                 , variable_block: str
                  , id: int
                  , maxWidth: int
                  , maxDepth: int
@@ -41,7 +41,7 @@ class building(object):
         self.id: int = id
         self.type: building_types = building_types(type)
         self.style: building_styles = building_styles(style)
-        self.bricks: List[str] = bricks.split(',') if bricks is not None else []
+        self.variable_block: List[str] = variable_block.split(',') if variable_block is not None else []
         self.maxWidth: int = maxWidth
         self.maxDepth: int = maxDepth
         self.repeatableXs: List[str] = list(map(int, repeatableXs.split(',')))

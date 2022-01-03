@@ -6,6 +6,7 @@ import time
 from constants import MAX_HEIGHT
 from classes.ENUMS.orientations import orientations
 from classes.ENUMS.block_codes import block_codes
+from classes.ENUMS.variable_blocks import variable_blocks
 from classes.ENUMS.block_codes import water_block_codes
 from classes.ENUMS.building_types import building_types
 from classes.ENUMS.building_styles import building_styles
@@ -38,6 +39,7 @@ class Builder:
         zCenter: int,
         orientation: orientations,
         building: building,
+        variable_block_type: block_codes = block_codes.UNKNOWN,
         requiredWidth: int = -1,
         requiredDepth: int = -1,
         world_slice: WorldSlice = None
@@ -211,6 +213,8 @@ class Builder:
 
         print("Starting Build.")
 
+        change_bricks = variable_block_type != block_codes.UNKNOWN and len(building.variable_block) > 0 
+
         # Read building map and draw the blocks
         with open(building.filePath()) as csvfile:
             buildingReader = reader(csvfile, delimiter=",", quotechar='"')
@@ -220,6 +224,9 @@ class Builder:
                 x = int(block[site.building_map_x_index])
                 y = int(block[1])
                 z = int(block[site.building_map_z_index])
+
+                if change_bricks and blockType in building.variable_block :
+                    blockType = variable_block_type.value
 
                 xShifted = x + xRepeatedAlready[x]
                 zShifted = z + zRepeatedAlready[z]
@@ -258,6 +265,7 @@ class Builder:
         gapBetweenBuildings: Tuple[int, building_site],
         orientation: orientations,
         building: building,
+        variable_block_type: block_codes = block_codes.UNKNOWN,
         requiredWidth: int = -1,
         requiredDepth: int = -1,
     ) -> bool:
@@ -275,7 +283,7 @@ class Builder:
         )
 
         return self.create(
-            x_center, z_center, orientation, building, requiredWidth, requiredDepth
+            x_center, z_center, orientation, building, variable_block_type, requiredWidth, requiredDepth
         )
 
     def last_site(self) -> building_site:
@@ -290,6 +298,7 @@ class Builder:
         building_location_types: List[Tuple[int, building_types]],
         facing_directions: List[orientations],
         building_radii: List[int],
+        variable_block_type: block_codes,
         building_style: building_styles = building_styles.UNKNOWN,
         world_slice: WorldSlice = None
     ):
@@ -322,13 +331,14 @@ class Builder:
                     building_location[0],
                     building_location[1],
                     facing_direction,
-                    structure,
+                    structure, 
+                    variable_block_type,
                     world_slice = world_slice,
                 )
 
     @classmethod
     @Timer(text="Analyze and created ran in {:.2f} seconds")
-    def analyze_and_create(cls, locations: List[int], building_radii: List[int], building_style: building_styles = building_styles.UNKNOWN ):
+    def analyze_and_create(cls, locations: List[int], building_radii: List[int], variable_block_type: block_codes, building_style: building_styles = building_styles.UNKNOWN ):
 
         builder = cls()
 
@@ -353,7 +363,7 @@ class Builder:
 
         # Build the buildings
         builder.create_village(
-            locations, building_location_types, facing_directions, building_radii, building_style, world_slice
+            locations, building_location_types, facing_directions, building_radii, variable_block_type, building_style, world_slice
         )
 
     @classmethod
@@ -411,6 +421,65 @@ class Builder:
 
                 sign_location = building_site.move_location(current_location, sign_on_which_side, MAX_BUILDING_RADIUS)
                 draw_sign(sign_location[0], ground_height + 1, sign_location[1], building_face_direction, building_style.name, building_type.name)
+
+                current_location = building_site.move_location(current_location, move_back_direction, max_diameter)
+  
+        print(menu)
+
+    @classmethod
+    def build_one_of_everything_variable_blocks(cls, location: Tuple[int, int], ground_height: int, building_face_direction: orientations) :
+
+        runCommand(f"tp {location[0]} 100 {location[1]}")
+
+        current_location = location
+        max_diameter = MAX_BUILDING_RADIUS * 2
+        builds: buildings = buildings()
+        build_on_which_side = (orientations.SOUTH, orientations.WEST, orientations.NORTH, orientations.EAST)[building_face_direction.value]    #wnes
+        sign_on_which_side = (orientations.NORTH, orientations.EAST, orientations.SOUTH, orientations.WEST)[building_face_direction.value]    #wnes
+        move_back_direction = (orientations.EAST, orientations.SOUTH, orientations.WEST, orientations.NORTH)[building_face_direction.value]    #wnes
+
+        row_number = 0
+
+        menu = f"Max building size:{max_diameter}x{max_diameter}\n\n"
+
+
+        for building_type in building_types: #type: building_types
+            if building_type == building_types.UNKNOWN :
+                continue
+
+            menu = menu + f"building_type.{building_type.name.upper()}\n"
+
+            all_buildings = builds.getByTypeStyleAndSize(building_type, building_styles.CUSTOM, max_diameter, max_diameter)
+            all_buildings.sort(key=lambda x:x.area())
+
+            if not all_buildings :
+                menu = menu + f"        None found in this size/type.\n"
+                continue
+
+
+            for build in all_buildings: #type: building
+                
+                menu = menu + f"        Row {row_number}: {build.id: <4}: {build.name} - {build.width}x{build.depth}\n"
+                row_number += 1
+
+                builder: 'Builder' = cls()
+
+                builder.create(current_location[0], current_location[1], building_face_direction, build)
+                menu = menu + f"            Block: none - original:\n"
+                sign_location = building_site.move_location(builder.last_site().sign_location, sign_on_which_side, 2)
+                draw_sign(sign_location[0], ground_height + 1, sign_location[1], building_face_direction, build.name, "Orginal", building_type.name, f"{build.width}x{build.depth} ID:{build.id}")
+
+
+                for variable_block in variable_blocks: #type: variable_blocks
+
+                    builder.create_adjacent_to_last(build_on_which_side, 5, building_face_direction, build, variable_block.value)
+                    menu = menu + f"            Block: {variable_block.value.value}:\n"
+
+                    sign_location = building_site.move_location(builder.last_site().sign_location, sign_on_which_side, 2)
+                    draw_sign(sign_location[0], ground_height + 1, sign_location[1], building_face_direction, build.name, variable_block.value.value.replace("minecraft:", ""), building_type.name, f"{build.width}x{build.depth} ID:{build.id}")
+
+                sign_location = building_site.move_location(current_location, sign_on_which_side, MAX_BUILDING_RADIUS)
+                draw_sign(sign_location[0], ground_height + 1, sign_location[1], building_face_direction, build.name, building_type.name, build.variable_block[0].replace("minecraft:", "") if len(build.variable_block) > 0 else "", build.variable_block[1].replace("minecraft:", "") if len(build.variable_block) > 1 else "")
 
                 current_location = building_site.move_location(current_location, move_back_direction, max_diameter)
   

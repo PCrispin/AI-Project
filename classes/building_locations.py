@@ -4,6 +4,8 @@
 from classes.Location_Genome import LocationGenome
 from classes.misc_functions import get_build_coord
 from classes.Builder import Builder
+from classes.ENUMS.block_codes import block_codes
+from classes.ENUMS.building_styles import building_styles
 
 import vendor.gdmc_http_client.interfaceUtils
 
@@ -64,7 +66,7 @@ class BuildingLocations:
             self.building_fitness += member.building_distance_fitness
             self.flatness_fitness += member.flatness_fitness
 
-    def paint_buildings(self):
+    def paint_buildings(self, variable_block_type: block_codes):
         """Paints building platforms onto the minecraft world"""
         location_list = [(o.x, o.z) for o in self.locations]
         radii = [o.building_radius for o in self.locations]
@@ -76,4 +78,5 @@ class BuildingLocations:
         print("Starting PHASE 2")
         print("****************")
 
-        Builder.analyze_and_create(location_list, radii)
+
+        Builder.analyze_and_create(location_list, radii, variable_block_type, building_styles.CUSTOM)
