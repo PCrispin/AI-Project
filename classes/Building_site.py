@@ -5,7 +5,7 @@ from classes.Bool_map import bool_map
 from classes.ENUMS.building_types import building_types
 from classes.ENUMS.building_styles import building_styles
 from classes.ENUMS.building_names import building_names
-from constants import VISITS_PER_BUILDING_TYPE
+from constants import VISITS_PER_BUILDING_TYPE, AREA_EXPANDED_MARGIN
 from typing import Tuple, List, Dict
 from collections import Counter
 from sys import maxsize 
@@ -13,8 +13,6 @@ import time
 
 
 class building_site(object):
-    AREA_EXPANDED_MARGIN = 5
-
     """Specifics of a building instance"""
     x_center = 0
     z_center = 0
@@ -107,10 +105,10 @@ class building_site(object):
             max(self.z_zero, z_end),
         )
         self.area_expanded = (
-            self.coords[0] - self.AREA_EXPANDED_MARGIN,
-            self.coords[1] - self.AREA_EXPANDED_MARGIN,
-            self.final_x_length + 2 * self.AREA_EXPANDED_MARGIN,
-            self.final_z_length + 2 * self.AREA_EXPANDED_MARGIN,
+            self.coords[0] - AREA_EXPANDED_MARGIN,
+            self.coords[1] - AREA_EXPANDED_MARGIN,
+            self.final_x_length + 2 * AREA_EXPANDED_MARGIN,
+            self.final_z_length + 2 * AREA_EXPANDED_MARGIN,
         )
 
         if orientation in (orientations.NORTH, orientations.SOUTH):
@@ -368,17 +366,13 @@ class building_site(object):
 
         if available_site_count < 3 :
             raise TimerError(f"Not enough building sites! Some sites may have been removed due to no roads.")
-        elif available_site_count < 10 :
-            add_type(building_types.FACTORY)
-            add_type(building_types.SHOP)
-            add_type(building_types.FLATS)
-        else:
-            for index in range(available_site_count // 10): #type: int
-                add_type(building_types.SHOP)
-                add_type(building_types.FACTORY)
-                add_type(building_types.RESTAURANT)
-                add_type(building_types.FLATS)
 
+        non_houses = (building_types.SHOP, building_types.FACTORY, building_types.FLATS, building_types.RESTAURANT)
+
+        for index in range(available_site_count // 2): #type: int
+            add_type(non_houses[index % len(non_houses)])
+
+        if available_site_count > 8 :
             add_type(building_types.TOWN_HALL)
 
         while available_site_count > len(building_types_in_village): 

@@ -1,7 +1,6 @@
 from classes.ENUMS.building_types import building_types
 from classes.ENUMS.building_styles import building_styles
-from typing import Tuple
-from typing import List
+from typing import Tuple, List
 
 class building(object):
     name = ""
@@ -28,23 +27,25 @@ class building(object):
                  , height: int
                  , type: int
                  , style: int
+                 , bricks: str
                  , id: int
                  , maxWidth: int
                  , maxDepth: int
                  , repeatableXs: str
                  , repeatableZs: str):
-        self.name = name
-        self.fileName = fileName
-        self.width = width
-        self.depth = depth
-        self.height = height
-        self.id = id
-        self.type = building_types(type)
-        self.style = building_styles(style)
-        self.maxWidth = maxWidth
-        self.maxDepth = maxDepth
-        self.repeatableXs = list(map(int, repeatableXs.split(',')))
-        self.repeatableZs = list(map(int, repeatableZs.split(',')))
+        self.name: str = name
+        self.fileName: str = fileName
+        self.width: int = width
+        self.depth: int = depth
+        self.height: int = height
+        self.id: int = id
+        self.type: building_types = building_types(type)
+        self.style: building_styles = building_styles(style)
+        self.bricks: List[str] = bricks.split(',') if bricks is not None else []
+        self.maxWidth: int = maxWidth
+        self.maxDepth: int = maxDepth
+        self.repeatableXs: List[str] = list(map(int, repeatableXs.split(',')))
+        self.repeatableZs: List[str] = list(map(int, repeatableZs.split(',')))
 
     def longest_side(self):
         return max(self.width, self.depth)

@@ -3,9 +3,10 @@ from sys import maxsize
 from typing import Tuple, List
 import random
 import time
-from constants import WATER_CODES
+from constants import MAX_HEIGHT
 from classes.ENUMS.orientations import orientations
 from classes.ENUMS.block_codes import block_codes
+from classes.ENUMS.block_codes import water_block_codes
 from classes.ENUMS.building_types import building_types
 from classes.ENUMS.building_styles import building_styles
 from classes.Timer import Timer
@@ -15,21 +16,13 @@ from vendor.gdmc_http_client.interfaceUtils import (
     runCommand,
 )
 from vendor.gdmc_http_client.worldLoader import WorldSlice
-from constants import BLOCK_BATCH_SIZE, MAX_BUILDING_RADIUS
+from constants import BLOCK_BATCH_SIZE, MAX_BUILDING_RADIUS, GRID_WIDTH, NUMBER_OF_FAMILIES_IN_A_FLAT, DRIVE_LENGTH, BUILDING_MARGIN
 from classes.Road_Builder import create_roads
 from classes.Bool_map import bool_map
 from classes.Building_site import building_site
 from classes.Building import building
 from classes.Buildings import buildings
 from classes.misc_functions import draw_sign
-
-# TODO: This is a flat file!  Make into a proper class...
-
-GRID_WIDTH = 15
-NUMBER_OF_FAMILIES_IN_A_FLAT = 5
-DRIVE_LENGTH = 1
-BUILDING_MARGIN = 3
-
 
 class Builder:
     """Builds Buildings!"""
@@ -47,6 +40,7 @@ class Builder:
         building: building,
         requiredWidth: int = -1,
         requiredDepth: int = -1,
+        world_slice: WorldSlice = None
     ) -> bool:
         # Buidings are to be built with dynamic sizes.  To accomplish this from fixed size building maps, some rows
         # and columns are repeated.  The repeated rows and columns are defined in repeaterXs and repeaterZs
@@ -60,11 +54,6 @@ class Builder:
         site = building_site(
             building, xCenter, zCenter, orientation, requiredWidth, requiredDepth
         )
-
-        MAX_BUILDING_FOUNDATION_HEIGHT = 100
-        MAX_HEIGHT = 255
-        MIN_HEIGHT = 0
-        MAX_WIDTH_OF_TREE = 10
 
         chopped = (
             []
@@ -108,7 +97,7 @@ class Builder:
                             yFloor -= 1
                         elif block2[-4] == "_log":
                             yFloor -= 2
-                        elif block1 in WATER_CODES or block2 in WATER_CODES:
+                        elif block1 in water_block_codes.list() or block2 in water_block_codes.list():
                             return (MAX_HEIGHT, MAX_HEIGHT, True)
                         else:
                             break
@@ -159,7 +148,8 @@ class Builder:
         print(f"Attempting {site.get_description()}")
 
         # http://localhost:9000/chunks?x=4&z=0&dx=2&dz=2
-        world_slice = WorldSlice(site.area_expanded)
+        if world_slice is None:
+            world_slice = WorldSlice(site.area_expanded)
 
         # Check for hills on proposed building site.  Build foundations if a little hilly, or error out if too hilly
 
@@ -173,19 +163,6 @@ class Builder:
             print("Can't build over water.")
             return False
 
-        if yOffset - yMin > MAX_BUILDING_FOUNDATION_HEIGHT:
-            hill = yMin - yOffset
-            runCommand(
-                "tell @a 'Can not build there!  Too hilly: "
-                + str(hill)
-                + " blocks from top to bottom.'"
-            )
-            print(
-                "Can not build there!  Too hilly: "
-                + str(hill)
-                + " blocks from top to bottom."
-            )
-            return False
         if yMin != yOffset:
             buildFoundationsInRegion(
                 site.coords[0], site.coords[1], site.coords[2], site.coords[3], yOffset
@@ -313,7 +290,8 @@ class Builder:
         building_location_types: List[Tuple[int, building_types]],
         facing_directions: List[orientations],
         building_radii: List[int],
-        building_style: building_styles = building_styles.UNKNOWN
+        building_style: building_styles = building_styles.UNKNOWN,
+        world_slice: WorldSlice = None
     ):
         building_maps = buildings()
 
@@ -345,6 +323,7 @@ class Builder:
                     building_location[1],
                     facing_direction,
                     structure,
+                    world_slice = world_slice,
                 )
 
     @classmethod
@@ -374,7 +353,7 @@ class Builder:
 
         # Build the buildings
         builder.create_village(
-            locations, building_location_types, facing_directions, building_radii, building_style
+            locations, building_location_types, facing_directions, building_radii, building_style, world_slice
         )
 
     @classmethod
@@ -409,7 +388,7 @@ class Builder:
                 all_buildings = builds.getByTypeStyleAndSize(building_type, building_style, max_diameter, max_diameter)
 
                 if not all_buildings :
-                    menu = menu + f"    None found in this size/style/type.\n"
+                    menu = menu + f"        None found in this size/style/type.\n"
                     continue
 
                 builder: 'Builder' = cls()
@@ -419,7 +398,6 @@ class Builder:
                 is_first = True
 
                 for building in all_buildings: #type: building
-                    
                     if is_first :
                         builder.create(current_location[0], current_location[1], building_face_direction, building)
                         is_first = False

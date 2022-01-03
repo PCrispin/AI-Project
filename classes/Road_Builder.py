@@ -5,27 +5,11 @@ from sys import maxsize
 from typing import List, Tuple, Dict
 from vendor.gdmc_http_client.worldLoader import WorldSlice
 from vendor.gdmc_http_client.interfaceUtils import placeBlockBatched, sendBlocks, runCommand, setBlock
-from constants import MAX_DETOUR, DEBUG_DRAW_WORKINGS, BLOCK_BATCH_SIZE
+from constants import MAX_DETOUR, DEBUG_DRAW_WORKINGS, BLOCK_BATCH_SIZE, MAX_HEIGHT, ENCOURAGE_PENALTY, MAX_SNAP_TO_GRID_PENALTY, NEAR_OBSTACLE_PENALTY,\
+    THRESHOLD_GAIN_FOR_REENTRY_TO_FRONTIER, LAMP_POST_SPACING, ABORT_SEARCH_FOR_SITE_AFTER_ROUTE_NOT_FOUND_LIMIT, MAX_HEIGHT_DROP, MAX_DEPTH
 from classes.ENUMS.block_codes import block_codes
 from classes.Bool_map import bool_map
 from classes.Building_site import building_site
-
-MAX_HEIGHT: int = 255
-MIN_HEIGHT: int = 0
-A_BIG_NUMBER: int = 1000000
-ENCOURAGE_PENALTY:float = 0.5
-MAX_SNAP_TO_GRID_PENALTY:float = 2
-NEAR_OBSTACLE_PENALTY:float = 1
-
-THRESHOLD_GAIN_FOR_REENTRY_TO_FRONTIER = 2
-
-LAMP_POST_SPACING = 10
-STRIPE_SPACING = 10
-
-ABORT_SEARCH_FOR_SITE_AFTER_ROUTE_NOT_FOUND_LIMIT = 4
-
-MAX_HEIGHT_DROP:int = 1
-MAX_DEPTH:int = 1000
 
 materials_vegetation:Tuple[str] = (   "minecraft:grass"
                                     , "minecraft:dandelion"
@@ -75,12 +59,9 @@ def create_roads( roads : List[Tuple[Tuple[int, int], Tuple[int, int]]]
 
     find_missing_routes(roads, roads_routes)
 
-    def draw_road(x: int, y_plus_1: int, z: int, is_stripe: bool = False) :
+    def draw_road(x: int, y_plus_1: int, z: int) :
         if not world_map.get_avoid_value(x, z) :
-            if is_stripe :
-                placeBlockBatched(x, y_plus_1 - 1, z, block_codes.BLACK_TERRACOTTA.value, BLOCK_BATCH_SIZE)
-            else :
-                placeBlockBatched(x, y_plus_1 - 1, z, block_codes.BLACK_TERRACOTTA.value, BLOCK_BATCH_SIZE)
+            placeBlockBatched(x, y_plus_1 - 1, z, block_codes.BLACK_TERRACOTTA.value, BLOCK_BATCH_SIZE)
 
     def draw_lamp_post(x: int, y:int, z: int) :
         for lamp_post in lamp_posts : #type: Tuple[int,int]
@@ -100,8 +81,6 @@ def create_roads( roads : List[Tuple[Tuple[int, int], Tuple[int, int]]]
         route_length = len(route)
         
         if route_length > 1 :
-            continuous_e_w_distance = 0
-            continuous_n_s_distance = 0
             for index in range(route_length + 1): #type: int
                 if index == route_length :
                     #So that adjacent bricks next to last brick in the path are drawn.
@@ -116,21 +95,17 @@ def create_roads( roads : List[Tuple[Tuple[int, int], Tuple[int, int]]]
                     previous_brick_x, previous_brick_y, previous_brick_z = route[index-1] 
                 
                 if brick_x - previous_brick_x == 0 :
-                    continuous_e_w_distance += 1
-                    continuous_n_s_distance = 0
                     if index % 10 == 0 :
                         draw_lamp_post(previous_brick_x - 2, previous_brick_y, previous_brick_z)
                     draw_road(previous_brick_x - 1, previous_brick_y, previous_brick_z)
                     draw_road(previous_brick_x + 1, previous_brick_y, previous_brick_z)
-                    draw_road(brick_x, brick_y, brick_z, True if continuous_e_w_distance % STRIPE_SPACING == 0 else False)
+                    draw_road(brick_x, brick_y, brick_z)
                 else :
-                    continuous_e_w_distance = 0
-                    continuous_n_s_distance += 1
                     if index % 10 == 0 :
                         draw_lamp_post(previous_brick_x, previous_brick_y, previous_brick_z - 2)
                     draw_road(previous_brick_x, previous_brick_y, previous_brick_z - 1)
                     draw_road(previous_brick_x, previous_brick_y, previous_brick_z + 1)
-                    draw_road(brick_x, brick_y, brick_z, True if continuous_n_s_distance % STRIPE_SPACING == 0 else False)
+                    draw_road(brick_x, brick_y, brick_z)
 
         sendBlocks()
 
@@ -286,7 +261,7 @@ def _find_route(origin: Tuple[int, int], destination: Tuple[int, int], world_sli
             focus_tile: tile_bfs = focus_tile.from_tile
 
         world_map.set_road(route, destination)
-        print(f"Route found  length:{depth}  manhattan dist: {manhattan}  considered: {len(tile_map)} blocks")
+        print(f"Route found  length:{depth}  manhattan dist: {manhattan}  considered: {len(tile_map)} blocks  depth: {depth}")
 
     while frontier:
         focus_tile: tile_bfs = tile_bfs.frontier_pop()

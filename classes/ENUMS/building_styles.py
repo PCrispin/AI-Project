@@ -5,6 +5,7 @@ class building_styles(Enum):
     LOG = 0
     MODERN = 1
     SAND = 2
+    CUSTOM = 3
     UNKNOWN = -1
 
 
