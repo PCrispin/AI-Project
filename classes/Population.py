@@ -8,13 +8,14 @@ from operator import attrgetter
 from numpy import random
 import numpy as np
 from scipy.stats import multivariate_normal
+from constants import RANDOM_SEED
+
+np.random.seed(RANDOM_SEED)
+
 from classes.Graph import graph, mm_scale
 
 from classes.Location_Genome import LocationGenome
 from classes.Timer import Timer
-from classes.misc_functions import get_build_coord
-
-import sys, os
 
 from constants import (
     BUILDING_DISTANCE_WEIGHTING,
@@ -22,6 +23,7 @@ from constants import (
     DEFAULT_POPULATION_SIZE,
     MAX_BUILDING_RADIUS,
     MIN_BUILDING_RADIUS,
+    RANDOM_SEED,
 )
 
 

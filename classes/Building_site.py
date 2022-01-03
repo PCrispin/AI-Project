@@ -11,6 +11,7 @@ from collections import Counter
 from sys import maxsize 
 import time
 
+
 class building_site(object):
     AREA_EXPANDED_MARGIN = 5
 
@@ -19,8 +20,8 @@ class building_site(object):
     z_center = 0
     y_min = 0
 
-    coords = (0,0,0,0)
-    area_expanded = (0,0,0,0)
+    coords = (0, 0, 0, 0)
+    area_expanded = (0, 0, 0, 0)
 
     x_zero = 0
     z_zero = 0
@@ -49,14 +50,21 @@ class building_site(object):
     building_map_x_index = 0
     building_map_z_index = 2
 
-    def __init__(self, building: building, x_center: int, z_center: int, orientation: orientations
-                 , required_width: int = 0, required_depth: int = 0):
+    def __init__(
+        self,
+        building: building,
+        x_center: int,
+        z_center: int,
+        orientation: orientations,
+        required_width: int = 0,
+        required_depth: int = 0,
+    ):
         self.x_center = x_center
         self.z_center = z_center
         self.building_type = building.type
         self.building_name = building_names(building.id)
         self.orientation = orientation
-       
+
         self.width = building.width
         self.depth = building.depth
         self.area = self.width * self.depth
@@ -64,13 +72,17 @@ class building_site(object):
         if orientation in (orientations.NORTH, orientations.SOUTH):
             self.raw_x_length = building.width
             self.raw_z_length = building.depth
-            self.repeaterXs, self.repeaterZs = building.getRepeaters(required_width, required_depth)
+            self.repeaterXs, self.repeaterZs = building.getRepeaters(
+                required_width, required_depth
+            )
             building_map_x_index = 0
             building_map_z_index = 2
         else:
             self.raw_x_length = building.depth
             self.raw_z_length = building.width
-            self.repeaterZs, self.repeaterXs = building.getRepeaters(required_width, required_depth)
+            self.repeaterZs, self.repeaterXs = building.getRepeaters(
+                required_width, required_depth
+            )
             self.building_map_x_index = 2
             self.building_map_z_index = 0
 
@@ -78,7 +90,9 @@ class building_site(object):
         self.final_z_length = self.raw_z_length + len(self.repeaterZs) - 1
         self.area = self.final_x_length * self.final_z_length
 
-        self.x_factor, self.z_factor = ((-1, 1), (-1, -1), (1, -1), (1, 1))[orientation.value] #w,n,e,s
+        self.x_factor, self.z_factor = ((-1, 1), (-1, -1), (1, -1), (1, 1))[
+            orientation.value
+        ]  # w,n,e,s
 
         self.x_zero = x_center + (-1 * self.x_factor * int(self.final_x_length / 2))
         self.z_zero = z_center + (-1 * self.z_factor * int(self.final_z_length / 2))
@@ -86,84 +100,127 @@ class building_site(object):
         x_end = self.x_zero + (self.x_factor * self.final_x_length)
         z_end = self.z_zero + (self.z_factor * self.final_z_length)
 
-        self.coords = (min(self.x_zero, x_end), min(self.z_zero, z_end)
-                       , max(self.x_zero, x_end), max(self.z_zero, z_end))
-        self.area_expanded = (self.coords[0] - self.AREA_EXPANDED_MARGIN, self.coords[1] - self.AREA_EXPANDED_MARGIN
-                              , self.final_x_length + 2 * self.AREA_EXPANDED_MARGIN
-                              , self.final_z_length + 2 * self.AREA_EXPANDED_MARGIN)
+        self.coords = (
+            min(self.x_zero, x_end),
+            min(self.z_zero, z_end),
+            max(self.x_zero, x_end),
+            max(self.z_zero, z_end),
+        )
+        self.area_expanded = (
+            self.coords[0] - self.AREA_EXPANDED_MARGIN,
+            self.coords[1] - self.AREA_EXPANDED_MARGIN,
+            self.final_x_length + 2 * self.AREA_EXPANDED_MARGIN,
+            self.final_z_length + 2 * self.AREA_EXPANDED_MARGIN,
+        )
 
         if orientation in (orientations.NORTH, orientations.SOUTH):
-            self.door_location = ((self.x_center, self.side_wall_coordinate(orientation) + self.z_factor))
-            self.sign_location = (self.door_location[0] + self.x_factor * 4, self.door_location[1])
+            self.door_location = (
+                self.x_center,
+                self.side_wall_coordinate(orientation) + self.z_factor,
+            )
+            self.sign_location = (
+                self.door_location[0] + self.x_factor * 4,
+                self.door_location[1],
+            )
         else:
-            self.door_location = ((self.side_wall_coordinate(orientation) + self.x_factor, self.z_center))
-            self.sign_location = (self.door_location[0], self.door_location[1] + self.z_factor * 4)
+            self.door_location = (
+                self.side_wall_coordinate(orientation) + self.x_factor,
+                self.z_center,
+            )
+            self.sign_location = (
+                self.door_location[0],
+                self.door_location[1] + self.z_factor * 4,
+            )
 
         return
-       
+
     def set_altitude(self, floor: int):
         self.y_min = floor
 
     def side_wall_coordinate(self, side: orientations) -> int:
-            return self.coords[side.value] #w,n,e,s
+        return self.coords[side.value]  # w,n,e,s
 
-    def map_coords_to_site_coords(self, x: int, y:int, z:int)-> Tuple[int, int, int]:
-        #coords undergo translation and rotation
-        return self.x_zero + self.x_factor * x, self.y_min + y, self.z_zero + self.z_factor * z
+    def map_coords_to_site_coords(self, x: int, y: int, z: int) -> Tuple[int, int, int]:
+        # coords undergo translation and rotation
+        return (
+            self.x_zero + self.x_factor * x,
+            self.y_min + y,
+            self.z_zero + self.z_factor * z,
+        )
 
     def get_description(self) -> str:
         return f"{self.building_name.name} built at [{self.coords[0]},{self.coords[1]}] size: [{self.final_x_length},{self.final_z_length}] at height {self.y_min}"
 
-    def calc_adjacent_location(self, buildOnWhichSide :orientations, gapBetweenBuildings: int
-                               , orientation :orientations, building: building
-                               , requiredWidth: int = -1, requiredDepth: int = -1) -> Tuple[int, int]:
+    def calc_adjacent_location(
+        self,
+        buildOnWhichSide: orientations,
+        gapBetweenBuildings: int,
+        orientation: orientations,
+        building: building,
+        requiredWidth: int = -1,
+        requiredDepth: int = -1,
+    ) -> Tuple[int, int]:
 
-        factorFrom = (-1, -1, 1, 1)[buildOnWhichSide.value] #w,n,e,s
-        factorToReverse = (1, 1, -1, -1)[orientation.value] #w,n,e,s
+        factorFrom = (-1, -1, 1, 1)[buildOnWhichSide.value]  # w,n,e,s
+        factorToReverse = (1, 1, -1, -1)[orientation.value]  # w,n,e,s
 
-        if orientation in (orientations.NORTH, orientations.SOUTH) :
-            half_x = int(building.width / 2)  #TODO - Should be final width
+        if orientation in (orientations.NORTH, orientations.SOUTH):
+            half_x = int(building.width / 2)  # TODO - Should be final width
             half_z = int(building.depth / 2)
         else:
             half_x = int(building.depth / 2)
             half_z = int(building.width / 2)
 
-        if buildOnWhichSide in (orientations.NORTH, orientations.SOUTH) :
+        if buildOnWhichSide in (orientations.NORTH, orientations.SOUTH):
             x_center = self.side_wall_coordinate(orientation) + half_x * factorToReverse
-            z_center = self.side_wall_coordinate(buildOnWhichSide) + (gapBetweenBuildings + 1 + half_z) * factorFrom
-        else :
-            x_center = self.side_wall_coordinate(buildOnWhichSide) + (gapBetweenBuildings + 1 + half_x) * factorFrom
+            z_center = (
+                self.side_wall_coordinate(buildOnWhichSide)
+                + (gapBetweenBuildings + 1 + half_z) * factorFrom
+            )
+        else:
+            x_center = (
+                self.side_wall_coordinate(buildOnWhichSide)
+                + (gapBetweenBuildings + 1 + half_x) * factorFrom
+            )
             z_center = self.side_wall_coordinate(orientation) + half_z * factorToReverse
 
         return x_center, z_center
 
     @classmethod
-    def move_location(self, location: Tuple[int, int], direction: orientations, distance: int) -> Tuple[int, int] :
-        factor = (-1, -1, 1, 1)[direction.value] #w,n,e,s        
+    def move_location(
+        self, location: Tuple[int, int], direction: orientations, distance: int
+    ) -> Tuple[int, int]:
+        factor = (-1, -1, 1, 1)[direction.value]  # w,n,e,s
 
-        if direction in (orientations.NORTH, orientations.SOUTH) :
+        if direction in (orientations.NORTH, orientations.SOUTH):
             return location[0], location[1] + factor * distance
-        else :
+        else:
             return location[0] + factor * distance, location[1]
 
     @classmethod
-    def get_locations(self
-                      , centers: List[Tuple[int, int]]
-                      , radii: List[int]
-                      , world_map: bool_map
-                      , drive_length: int
-                      ) -> Tuple[  List[orientations]                            #building_orientations
-                                , List[Tuple[int, int]]                         #door_locations
-                                , List[Tuple[Tuple[int,int], Tuple[int,int]]]   #roads
-                                ] :
+    def get_locations(
+        self,
+        centers: List[Tuple[int, int]],
+        radii: List[int],
+        world_map: bool_map,
+        drive_length: int,
+    ) -> Tuple[
+        List[orientations],  # building_orientations
+        List[Tuple[int, int]],  # door_locations
+        List[Tuple[Tuple[int, int], Tuple[int, int]]],  # roads
+    ]:
 
         n_sites = len(centers)
-        
+
         average_location = (0, 0)
         for location in centers:
-            average_location = average_location[0] + location[0], average_location[1] + location[1]
-        average_location = int(average_location[0] / n_sites), int(average_location[1] / n_sites)
-
+            average_location = (
+                average_location[0] + location[0],
+                average_location[1] + location[1],
+            )
+        average_location = int(average_location[0] / n_sites), int(
+            average_location[1] / n_sites
+        )
 
         # Make sure building is facing the center of the village, if possible.
         direction_preferences = []
@@ -191,22 +248,33 @@ class building_site(object):
             chosen = False
             for direction_preference in direction_preferences[location_index]:
                 door_locations_candidate = building_site.move_location(
-                                                    centers[location_index]
-                                                , direction_preference
-                                                , radii[location_index] + drive_length)
+                    centers[location_index],
+                    direction_preference,
+                    radii[location_index] + drive_length,
+                )
 
-                if world_map.get_avoid_value(door_locations_candidate[0], door_locations_candidate[1]) :
-                    if world_map.get_avoid_water_value(door_locations_candidate[0], door_locations_candidate[1]) :
-                        print(f"Site {centers[location_index]}: potential door at {door_locations_candidate} blocked by water.")
+                if world_map.get_avoid_value(
+                    door_locations_candidate[0], door_locations_candidate[1]
+                ):
+                    if world_map.get_avoid_water_value(
+                        door_locations_candidate[0], door_locations_candidate[1]
+                    ):
+                        print(
+                            f"Site {centers[location_index]}: potential door at {door_locations_candidate} blocked by water."
+                        )
                     else:
-                        print(f"Site {centers[location_index]}: potential door at {door_locations_candidate} blocked by other building.")
+                        print(
+                            f"Site {centers[location_index]}: potential door at {door_locations_candidate} blocked by other building."
+                        )
                 else:
                     building_orientations.append(direction_preference)
                     door_locations.append(door_locations_candidate)
                     chosen = True
                     break
-            if not chosen :
-                raise Exception(f'Building {centers[location_index]} has no possible door locations!')
+            if not chosen:
+                raise Exception(
+                    f"Building {centers[location_index]} has no possible door locations!"
+                )
 
         roads = []
 
@@ -387,13 +455,17 @@ class building_site(object):
                 house_location_adresses = []
                 building_locations = []
                 while not attempt.is_top_node:
-                    building_locations.append((attempt.location_index, attempt.building))
-                    if attempt.building == building_types.HOUSE :
+                    building_locations.append(
+                        (attempt.location_index, attempt.building)
+                    )
+                    if attempt.building == building_types.HOUSE:
                         house_location_adresses.append(attempt.location_index)
-                    elif attempt.building == building_types.FLATS :
+                    elif attempt.building == building_types.FLATS:
                         flat_address = attempt.location_index
                     else:
-                        function_building_locations.append((attempt.location_index, attempt.building))
+                        function_building_locations.append(
+                            (attempt.location_index, attempt.building)
+                        )
                     attempt = attempt.parent
 
                 total_distance = 0
@@ -428,6 +500,7 @@ class building_site(object):
             locations_list.insert(0, location)
 
             return winning_score, winning_building_locations
+
         ################################################################################################################
 
         total_distance, building_location_types = recursive_bfs_step1(attempt_details.get_top_node(), total_no_of_houses, locations_available)

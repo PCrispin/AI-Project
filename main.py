@@ -1,19 +1,20 @@
-""" Generates a list of building locations through genetic algorithms
+""" Generates a list of building locations through genetic algorithms"""
 
-    Returns:
-        [list] - List containing A location genomes containing best building locations,
-        building location blocks, and fitness value.
-    """
-
-
+import sys
+import os
+import random
 from classes.Timer import Timer
 from classes.building_locations import BuildingLocations
-from classes.Graph import graph, print_all_fitness_graphs
+from classes.Graph import graph
 from classes.http_interface import get_world_state
 from classes.Location_Genome import LocationGenome
 from classes.Population import Population
-from constants import AREA, BUILDING_NUMBER, GENERATIONS, POPULATION_SIZE
-import sys, os
+from classes.misc_functions import rectangles_overlap
+from constants import AREA, BUILDING_NUMBER, GENERATIONS, POPULATION_SIZE, RANDOM_SEED
+
+
+random.seed(RANDOM_SEED)
+
 
 def run_epochs(g_representation: graph) -> BuildingLocations:
     """Runs epochs of genetic algorithm to return class containing ideal locations
@@ -75,6 +76,9 @@ def enable_print():
     sys.stdout = sys.__stdout__
 
 
+import itertools
+
+
 @Timer(text="Program executed ran in {:.2f} seconds")
 def main(debug=False):
     print("Starting Program")
@@ -84,9 +88,34 @@ def main(debug=False):
     g_start = get_world_state(area=AREA)
     # print_all_fitness_graphs(g=g_start)
     buildings = run_epochs(g_start)
+    remove_overlapping_buildings(buildings)
     buildings.paint_buildings()
+
     if not debug:
         enable_print()
+
+
+def remove_overlapping_buildings(buildings):
+    check_order = list(itertools.product(buildings.locations, repeat=2))
+    overlap = []
+    for location in check_order:
+        if location[0] == location[1]:
+            overlap.append(False)
+        else:
+            overlap.append(
+                rectangles_overlap(
+                    location[0].build_coordinates, location[1].build_coordinates
+                )
+            )
+    true_indexes = [i for i, x in enumerate(overlap) if x]
+    if len(true_indexes) > 0:
+        for i in true_indexes:
+            site_1 = check_order[i][0]
+            if site_1 in buildings.locations:
+                buildings.locations.remove(site_1)
+                remove_overlapping_buildings(buildings)
+    else:
+        return
 
 
 if __name__ == "__main__":
