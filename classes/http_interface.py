@@ -25,20 +25,31 @@ def get_world_state(paint_fence=False, area=(0, 0, 100, 60)) -> graph:
 
     """
     world_slice = WorldSlice(area)
-    block_map, height_map, manhattan_water_map = get_material_and_height_map(world_slice=world_slice)
+
+    block_map, height_map, manhattan_water_map = get_material_and_height_map(
+        world_slice=world_slice
+    )
 
     if paint_fence:
         vendor.gdmc_http_client.mapUtils.paint_fence(
             worldSlice=world_slice, heightmap=height_map
         )
         world_slice = WorldSlice(area)
-        block_map, height_map, manhattan_water_map = get_material_and_height_map(world_slice=world_slice)
-    input_space = calc_input_space(block_map=block_map, height_map=height_map, manhattan_water_map=manhattan_water_map)
+        block_map, height_map, manhattan_water_map = get_material_and_height_map(
+            world_slice=world_slice
+        )
+    input_space = calc_input_space(
+        block_map=block_map,
+        height_map=height_map,
+        manhattan_water_map=manhattan_water_map,
+    )
     g_representation = graph(input_space)
     return g_representation
 
 
-def calc_input_space(block_map: np.ndarray, height_map: np.ndarray, manhattan_water_map: np.array) -> np.ndarray:
+def calc_input_space(
+    block_map: np.ndarray, height_map: np.ndarray, manhattan_water_map: np.array
+) -> np.ndarray:
     """Convert data into format the graph object accepts
 
     Args:
@@ -57,7 +68,7 @@ def calc_input_space(block_map: np.ndarray, height_map: np.ndarray, manhattan_wa
                 z_value,
                 height_map[x_value][z_value],
                 block_map[x_value][z_value],
-                manhattan_water_map[x_value][z_value]
+                manhattan_water_map[x_value][z_value],
             )
             input_space_row.append(block)
         input_space.append(input_space_row)
@@ -120,6 +131,7 @@ def calculate_block_map(world_slice) -> np.ndarray:
         block_map.append(block_row)
     return np.array(block_map)
 
+
 def calculate_manhattan_distance_to_water(block_map: np.ndarray) -> np.ndarray:
 
     width = len(block_map)
@@ -132,67 +144,86 @@ def calculate_manhattan_distance_to_water(block_map: np.ndarray) -> np.ndarray:
     if depth == 0:
         return []
 
-    not_set = width + depth + 10    #is larger than biggest possible manhattan distance on grid
+    not_set = (
+        width + depth + 10
+    )  # is larger than biggest possible manhattan distance on grid
 
-    manhattan_water_map = np.array([[not_set for z in range(depth)] for x in range(width)])
+    manhattan_water_map = np.array(
+        [[not_set for z in range(depth)] for x in range(width)]
+    )
 
-    #get values for 1st dimension of the manhattan distance
+    # get values for 1st dimension of the manhattan distance
 
     depth_index = depth - 1
     width_index = width - 1
 
-    for x in range(width) :
-        last_water_address_down = not_set 
-        last_water_address_up = not_set 
-        for z in range(depth) :
-            if block_map[x][z] == 1 :
+    for x in range(width):
+        last_water_address_down = not_set
+        last_water_address_up = not_set
+        for z in range(depth):
+            if block_map[x][z] == 1:
                 manhattan_water_map[x][z] = 0
                 last_water_address_down = z
             elif last_water_address_down != not_set:
-                manhattan_water_map[x][z] = min(z - last_water_address_down, manhattan_water_map[x][z])
+                manhattan_water_map[x][z] = min(
+                    z - last_water_address_down, manhattan_water_map[x][z]
+                )
 
             up_z = depth_index - z
-            if block_map[x][up_z] == 1 :
+            if block_map[x][up_z] == 1:
                 manhattan_water_map[x][up_z] = 0
                 last_water_address_up = up_z
             elif last_water_address_up != not_set:
-                manhattan_water_map[x][up_z] = min(last_water_address_up - up_z, manhattan_water_map[x][up_z])
+                manhattan_water_map[x][up_z] = min(
+                    last_water_address_up - up_z, manhattan_water_map[x][up_z]
+                )
 
-
-    for z in range(depth) :
-        last_water_address_down = not_set 
-        last_water_address_up = not_set 
-        for x in range(width) :
-            if block_map[x][z] == 1 :
+    for z in range(depth):
+        last_water_address_down = not_set
+        last_water_address_up = not_set
+        for x in range(width):
+            if block_map[x][z] == 1:
                 manhattan_water_map[x][z] = 0
                 last_water_address_down = x
             elif last_water_address_down != not_set:
-                manhattan_water_map[x][z] = min(x - last_water_address_down, manhattan_water_map[x][z])
+                manhattan_water_map[x][z] = min(
+                    x - last_water_address_down, manhattan_water_map[x][z]
+                )
 
             up_x = width_index - x
-            if block_map[up_x][z] == 1 :
+            if block_map[up_x][z] == 1:
                 manhattan_water_map[up_x][z] = 0
                 last_water_address_up = up_x
             elif last_water_address_up != not_set:
-                manhattan_water_map[up_x][z] = min(last_water_address_up - up_x, manhattan_water_map[up_x][z])
+                manhattan_water_map[up_x][z] = min(
+                    last_water_address_up - up_x, manhattan_water_map[up_x][z]
+                )
 
-    #drag in values for 2nd dimension of the manhattan distance
-    for x in range(width) :
-        for z in range(1, depth) :
-            manhattan_water_map[x][z] = min(manhattan_water_map[x][z-1] + 1, manhattan_water_map[x][z])
-        
+    # drag in values for 2nd dimension of the manhattan distance
+    for x in range(width):
+        for z in range(1, depth):
+            manhattan_water_map[x][z] = min(
+                manhattan_water_map[x][z - 1] + 1, manhattan_water_map[x][z]
+            )
+
             up_z = depth_index - z
-            manhattan_water_map[x][up_z] = min(manhattan_water_map[x][up_z+1] + 1, manhattan_water_map[x][up_z])
+            manhattan_water_map[x][up_z] = min(
+                manhattan_water_map[x][up_z + 1] + 1, manhattan_water_map[x][up_z]
+            )
 
-    for z in range(depth) :
-        for x in range(1, width) :
-            manhattan_water_map[x][z] = min(manhattan_water_map[x-1][z] + 1, manhattan_water_map[x][z])
-        
+    for z in range(depth):
+        for x in range(1, width):
+            manhattan_water_map[x][z] = min(
+                manhattan_water_map[x - 1][z] + 1, manhattan_water_map[x][z]
+            )
+
             up_x = width_index - x
-            manhattan_water_map[up_x][z] = min(manhattan_water_map[up_x+1][z] + 1, manhattan_water_map[up_x][z])
-
+            manhattan_water_map[up_x][z] = min(
+                manhattan_water_map[up_x + 1][z] + 1, manhattan_water_map[up_x][z]
+            )
 
     return manhattan_water_map
+
 
 def get_material_and_height_map(world_slice):
     """Get array of materials at y index  and y index

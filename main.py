@@ -3,6 +3,7 @@
 import sys
 import os
 import random
+from classes.ENUMS.biome_ids import biome_ids
 from classes.Timer import Timer
 from classes.building_locations import BuildingLocations
 from classes.Graph import graph
@@ -11,6 +12,7 @@ from classes.Location_Genome import LocationGenome
 from classes.Population import Population
 from classes.misc_functions import rectangles_overlap
 from constants import AREA, BUILDING_NUMBER, GENERATIONS, POPULATION_SIZE, RANDOM_SEED
+from vendor.gdmc_http_client.worldLoader import WorldSlice
 
 
 random.seed(RANDOM_SEED)
@@ -26,7 +28,9 @@ def run_epochs(g_representation: graph) -> BuildingLocations:
         Building_Locations: A class containing fitness building locations
 
     """
-    locations = BuildingLocations()
+    # get the world slice to add to the building_locations
+
+    locations = BuildingLocations(world_slice=WorldSlice(AREA))
     for _ in range(BUILDING_NUMBER):
         fitess = generate_building_location_through_genetic_algorithm(
             g_representation=g_representation
@@ -37,6 +41,10 @@ def run_epochs(g_representation: graph) -> BuildingLocations:
         g_representation.buildings_coords.append(
             locations.locations[-1].build_coordinates
         )
+
+    for location in locations.locations:
+        biome_id = locations.get_biome(location=location, y_index=100)
+        print(biome_ids(biome_id))
     return locations
 
 
