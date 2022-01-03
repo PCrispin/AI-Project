@@ -1,6 +1,7 @@
 """Class containing all building locations and operations
     on the building sites
  """
+from typing import Tuple
 from classes.ENUMS.biome_ids import biome_regions
 from classes.Location_Genome import LocationGenome
 from classes.misc_functions import get_build_coord

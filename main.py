@@ -17,11 +17,14 @@ from constants import (
     AREA,
     BIOME_BLOCK_MAP_DICTIONARY,
     BIOME_MAP_DICTIONARY,
+    BLOCK_BATCH_SIZE,
     BUILDING_NUMBER,
+    FOLIAGE_CLEARING_HEIGHT,
     GENERATIONS,
     POPULATION_SIZE,
     RANDOM_SEED,
 )
+from vendor.gdmc_http_client.interfaceUtils import placeBlockBatched, runCommand
 from vendor.gdmc_http_client.worldLoader import WorldSlice
 
 
@@ -76,6 +79,34 @@ def determine_village_biome(
         locations.variable_blocktype = block_codes.SANDSTONE
 
 
+def i_hate_nature(g: graph, buildings: BuildingLocations):
+    """Removes foliage from above the heightmap around the town location
+
+    Args:
+        g (graph): [description]
+        buildings (BuildingLocations): [description]
+    """
+
+    all_building_coord = []
+    for location in buildings.locations:
+        all_building_coord.append(location.build_coordinates)
+    x_min = min(all_building_coord, key=lambda t: t[0])[0]
+    x_max = max(all_building_coord, key=lambda t: t[2])[2]
+    z_min = min(all_building_coord, key=lambda t: t[1])[1]
+    z_max = max(all_building_coord, key=lambda t: t[3])[3]
+
+    for x_value in range(x_min, x_max):
+        for z_value in range(z_min, z_max):
+            for i in range(FOLIAGE_CLEARING_HEIGHT):
+                placeBlockBatched(
+                    x_value,
+                    g.tile_map[x_value][z_value].z + i,
+                    z_value,
+                    block_codes.AIR.value,
+                    BLOCK_BATCH_SIZE,
+                )
+
+
 def generate_building_location_through_genetic_algorithm(
     g_representation: graph,
 ) -> LocationGenome:
@@ -116,15 +147,18 @@ import itertools
 
 
 @Timer(text="Program executed ran in {:.2f} seconds")
-def main(debug=False):
+def main(debug=False, removefoliage=True):
     print("Starting Program")
-
+    runCommand(f"tp 0 100 0)
     if not debug:
         block_print()
     g_start = get_world_state(area=AREA)
+
     # print_all_fitness_graphs(g=g_start)
     buildings = run_epochs(g_start)
     remove_overlapping_buildings(buildings)
+    if removefoliage:
+        i_hate_nature(g=g_start, buildings=buildings)
     buildings.paint_buildings()
 
     if not debug:
@@ -167,5 +201,13 @@ if __name__ == "__main__":
         help="Show debug output",
         default=True,
     )
+
+    parser.add_argument(
+        "--removefoliage",
+        metavar="path",
+        required=False,
+        help="Remove Folliage",
+        default=True,
+    )
     args = parser.parse_args()
-    main(debug=args.debug)
+    main(debug=args.debug, removefoliage=args.removefoliage)

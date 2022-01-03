@@ -3,6 +3,7 @@ from typing import Tuple
 from classes.ENUMS.orientations import orientations
 from vendor.gdmc_http_client.interfaceUtils import runCommand
 
+
 def get_build_coord(location: GridLocation, building_radius: int) -> list:
     """Get building locations for buidling based on radius
 
@@ -54,21 +55,36 @@ def rectangles_overlap(
 def cut_out_bounds(value: int, maximum: int) -> int:
     return max(min(value, maximum), 0)
 
-def draw_sign(  x: int, y: int, z: int
-              , facing_direction: orientations
-              , text_line_1: str
-              , text_line_2: str = ""
-              , text_line_3: str = ""
-              , text_line_4: str = ""
-              ) -> str:
 
-    #/setblock 301 69 269 birch_sign[rotation=5]{Text1:'"My chest"',Text2:'"Do not open!"'}
+def draw_sign(
+    x: int,
+    y: int,
+    z: int,
+    facing_direction: orientations,
+    text_line_1: str,
+    text_line_2: str = "",
+    text_line_3: str = "",
+    text_line_4: str = "",
+) -> str:
 
-    rotation_value = ["4", "8", "12", "0"][facing_direction.value]   #wnes
+    # /setblock 301 69 269 birch_sign[rotation=5]{Text1:'"My chest"',Text2:'"Do not open!"'}
 
-    return runCommand("setblock " + str(x) + " " + str(y) + " " + str(z) + \
-                    " birch_sign[rotation=" + rotation_value + "]" + \
-                            "{Text1:'\"" + text_line_1 +  "\"', "\
-                             "Text2:'\"" + text_line_2 +  "\"', "\
-                             "Text3:'\"" + text_line_3 +  "\"', "\
-                             "Text4:'\"" + text_line_4 +  "\"'}")
+    rotation_value = ["4", "8", "12", "0"][facing_direction.value]  # wnes
+
+    return runCommand(
+        "setblock "
+        + str(x)
+        + " "
+        + str(y)
+        + " "
+        + str(z)
+        + " birch_sign[rotation="
+        + rotation_value
+        + "]"
+        + "{Text1:'\""
+        + text_line_1
+        + "\"', "
+        "Text2:'\"" + text_line_2 + "\"', "
+        "Text3:'\"" + text_line_3 + "\"', "
+        "Text4:'\"" + text_line_4 + "\"'}"
+    )
