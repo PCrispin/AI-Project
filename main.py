@@ -4,6 +4,7 @@ import sys
 import os
 import random
 from typing import Tuple
+import itertools
 from classes.ENUMS.biome_ids import biome_regions
 from classes.ENUMS.block_codes import block_codes
 from classes.Timer import Timer
@@ -21,6 +22,7 @@ from constants import (
     BUILDING_NUMBER,
     FOLIAGE_CLEARING_HEIGHT,
     GENERATIONS,
+    MINECRAFT_USERNAME,
     POPULATION_SIZE,
     RANDOM_SEED,
 )
@@ -79,7 +81,7 @@ def determine_village_biome(
         locations.variable_blocktype = block_codes.SANDSTONE
 
 
-def i_hate_nature(g: graph, buildings: BuildingLocations):
+def remove_foliage(g: graph, buildings: BuildingLocations):
     """Removes foliage from above the heightmap around the town location
 
     Args:
@@ -90,13 +92,13 @@ def i_hate_nature(g: graph, buildings: BuildingLocations):
     all_building_coord = []
     for location in buildings.locations:
         all_building_coord.append(location.build_coordinates)
-    x_min = min(all_building_coord, key=lambda t: t[0])[0]
-    x_max = max(all_building_coord, key=lambda t: t[2])[2]
-    z_min = min(all_building_coord, key=lambda t: t[1])[1]
-    z_max = max(all_building_coord, key=lambda t: t[3])[3]
+    x_min: int = min(all_building_coord, key=lambda t: t[0])[0]
+    x_max: int = max(all_building_coord, key=lambda t: t[2])[2]
+    z_min: int = min(all_building_coord, key=lambda t: t[1])[1]
+    z_max: int = max(all_building_coord, key=lambda t: t[3])[3]
 
-    for x_value in range(x_min, x_max):
-        for z_value in range(z_min, z_max):
+    for x_value in range(max(x_min, AREA[0]), min(x_max, AREA[2])):
+        for z_value in range(max(x_min, AREA[1]), min(z_max, AREA[3])):
             for i in range(FOLIAGE_CLEARING_HEIGHT):
                 placeBlockBatched(
                     x_value,
@@ -105,6 +107,10 @@ def i_hate_nature(g: graph, buildings: BuildingLocations):
                     block_codes.AIR.value,
                     BLOCK_BATCH_SIZE,
                 )
+
+    # The correct way to TP the character :D
+    tp_string = "tp " + MINECRAFT_USERNAME + " " + str(x_min) + " 100 " + str(z_min)
+    runCommand(tp_string)
 
 
 def generate_building_location_through_genetic_algorithm(
@@ -128,7 +134,7 @@ def generate_building_location_through_genetic_algorithm(
         population = population.next_generation()
     fitess_member = population.get_fitess_member()
     print(
-        f"Found site (x, y, z) ({fitess_member.x},{fitess_member.z}) with build radius {fitess_member.building_radius}"
+        f"Found site (x, z) ({fitess_member.x},{fitess_member.z}) with build radius {fitess_member.building_radius}"
     )
     return fitess_member
 
@@ -143,13 +149,10 @@ def enable_print():
     sys.stdout = sys.__stdout__
 
 
-import itertools
-
-
 @Timer(text="Program executed ran in {:.2f} seconds")
 def main(debug=False, removefoliage=True):
     print("Starting Program")
-    runCommand(f"tp 0 100 0)
+
     if not debug:
         block_print()
     g_start = get_world_state(area=AREA)
@@ -158,7 +161,8 @@ def main(debug=False, removefoliage=True):
     buildings = run_epochs(g_start)
     remove_overlapping_buildings(buildings)
     if removefoliage:
-        i_hate_nature(g=g_start, buildings=buildings)
+        remove_foliage(g=g_start, buildings=buildings)
+
     buildings.paint_buildings()
 
     if not debug:

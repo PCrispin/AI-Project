@@ -4,23 +4,28 @@ from classes.ENUMS.biome_ids import biome_regions
 from classes.ENUMS.block_codes import block_codes
 from typing import Tuple
 
-MAX_BUILDING_RADIUS = 13  # SHOULD BE ODD
-MIN_BUILDING_RADIUS = 7
-WATER_DISTANCE_WEIGHTING = 1.75
-BUILDING_DISTANCE_WEIGHTING = 2
-FLATNESS_FITNESS_WEIGHTING = 1
-DEFAULT_MUTATION_RATE = 1 / 6
-DEFAULT_POPULATION_SIZE = 5
-GENERATIONS = 40
-BUILDING_NUMBER = 13
-POPULATION_SIZE = 100
-AREA = (0, 0, 256, 256)  # x position, z position, x size, z size
-WATER_SEARCH_RADIUS = (
+MAX_BUILDING_RADIUS: int = 13  # SHOULD BE ODD
+MIN_BUILDING_RADIUS: int = 7
+WATER_DISTANCE_WEIGHTING: float = 1.75
+BUILDING_DISTANCE_WEIGHTING: float = 2
+FLATNESS_FITNESS_WEIGHTING: float = 1
+DEFAULT_MUTATION_RATE: float = 1 / 6
+DEFAULT_POPULATION_SIZE: int = 5
+GENERATIONS: int = 40
+BUILDING_NUMBER: int = 13
+POPULATION_SIZE: int = 100
+AREA: tuple[int, int, int, int] = (
+    0,
+    0,
+    256,
+    256,
+)  # x position, z position, x size, z size
+WATER_SEARCH_RADIUS: int = (
     MAX_BUILDING_RADIUS * 2
 )  # How far to search from building location for water, should be larger than MAX_BUILDING_RADIUS
-MAXIMUM_WATER_DISTANCE_PENALTY = MAX_BUILDING_RADIUS
-MAXIMUM_HOUSE_DISTANCE_PENALTY = AREA[2] + AREA[3]
-IMAGE_DIR_FOLD = "data/images"
+MAXIMUM_WATER_DISTANCE_PENALTY: int = MAX_BUILDING_RADIUS
+MAXIMUM_HOUSE_DISTANCE_PENALTY: int = AREA[2] + AREA[3]
+IMAGE_DIR_FOLD: str = "data/images"
 
 DEBUG_DRAW_WORKINGS: bool = False  # yellow/orange-first in frontier, light blue-candidate, NOT_POSSIBLE: Gray-drop or black
 MAX_DETOUR: int = 110
@@ -34,17 +39,15 @@ VISITS_PER_BUILDING_TYPE: Tuple[int] = (
 )
 BLOCK_BATCH_SIZE: int = 1000
 MAX_HEIGHT: int = 255
-
 GRID_WIDTH: int = 15
 NUMBER_OF_FAMILIES_IN_A_FLAT: int = 5
 DRIVE_LENGTH: int = 1
 BUILDING_MARGIN: int = 3
-
-RANDOM_SEED = 10
+RANDOM_SEED: int = 10
 
 
 # Dictionary mapping biome ID to internal biome regional id
-BIOME_MAP_DICTIONARY = dict(
+BIOME_MAP_DICTIONARY: dict = dict(
     {
         4: 1,
         18: 1,
@@ -81,7 +84,7 @@ BIOME_MAP_DICTIONARY = dict(
 )
 
 # Dictionary mapping regions to variable block type
-BIOME_BLOCK_MAP_DICTIONARY = dict(
+BIOME_BLOCK_MAP_DICTIONARY: dict = dict(
     {
         biome_regions.FOREST: block_codes.DARK_OAK_WOOD,
         biome_regions.PLAINS: block_codes.DARK_OAK_WOOD,
@@ -100,4 +103,5 @@ MAX_HEIGHT_DROP: int = 1
 MAX_DEPTH: int = 500
 AREA_EXPANDED_MARGIN: int = 5
 
-FOLIAGE_CLEARING_HEIGHT = 20
+FOLIAGE_CLEARING_HEIGHT: int = 20
+MINECRAFT_USERNAME: str = "EnviableMonkey"
