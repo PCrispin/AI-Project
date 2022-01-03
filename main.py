@@ -52,9 +52,8 @@ def run_epochs(g_representation: graph) -> BuildingLocations:
             locations.locations[-1].build_coordinates
         )
 
-    village_biome, variable_block_type = determine_village_biome(locations=locations)
-
-    return locations, variable_block_type
+    determine_village_biome(locations=locations)
+    return locations
 
 
 def determine_village_biome(
@@ -69,10 +68,12 @@ def determine_village_biome(
             biome_lst.append(biome_region.value)
         best_biome = biome_regions(max(set(biome_lst), key=biome_lst.count))
         block_type = BIOME_BLOCK_MAP_DICTIONARY.get(best_biome)
-
-        return best_biome, block_type
+        locations.biome_region = best_biome
+        locations.variable_blocktype = block_type
     except ValueError:
-        return biome_regions.DESERT, block_codes.SANDSTONE
+        print("Biome Id not in BIOME_MAP_DICTIONARY - Maybe consider adding it? :D")
+        locations.biome_region = biome_regions.DESERT
+        locations.variable_blocktype = block_codes.SANDSTONE
 
 
 def generate_building_location_through_genetic_algorithm(
@@ -122,9 +123,9 @@ def main(debug=False):
         block_print()
     g_start = get_world_state(area=AREA)
     # print_all_fitness_graphs(g=g_start)
-    buildings, variable_block_type = run_epochs(g_start)
+    buildings = run_epochs(g_start)
     remove_overlapping_buildings(buildings)
-    buildings.paint_buildings(variable_block_type)
+    buildings.paint_buildings()
 
     if not debug:
         enable_print()

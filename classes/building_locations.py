@@ -1,6 +1,7 @@
 """Class containing all building locations and operations
     on the building sites
  """
+from classes.ENUMS.biome_ids import biome_regions
 from classes.Location_Genome import LocationGenome
 from classes.misc_functions import get_build_coord
 from classes.Builder import Builder
@@ -22,7 +23,8 @@ class BuildingLocations:
         self.flatness_fitness = 0
         self.locations = []
         self.world_slice = world_slice
-        self.biome: int = 0
+        self.biome_region: biome_regions
+        self.variable_blocktype: block_codes
 
     def add_building(self, location: LocationGenome):
         """Adds a building location to the class
@@ -66,7 +68,7 @@ class BuildingLocations:
             self.building_fitness += member.building_distance_fitness
             self.flatness_fitness += member.flatness_fitness
 
-    def paint_buildings(self, variable_block_type: block_codes):
+    def paint_buildings(self):
         """Paints building platforms onto the minecraft world"""
         location_list = [(o.x, o.z) for o in self.locations]
         radii = [o.building_radius for o in self.locations]
@@ -78,5 +80,6 @@ class BuildingLocations:
         print("Starting PHASE 2")
         print("****************")
 
-
-        Builder.analyze_and_create(location_list, radii, variable_block_type, building_styles.CUSTOM)
+        Builder.analyze_and_create(
+            location_list, radii, self.variable_blocktype, building_styles.CUSTOM
+        )
