@@ -1,5 +1,6 @@
 """Constants for the project"""
 
+from classes.ENUMS.biome_ids import biome_regions
 from classes.ENUMS.block_codes import block_codes
 
 
@@ -44,6 +45,7 @@ WATER_CODES = [
 RANDOM_SEED = 10
 
 
+# Dictionary mapping biome ID to internal biome regional id
 BIOME_MAP_DICTIONARY = dict(
     {
         4: 1,
@@ -76,5 +78,16 @@ BIOME_MAP_DICTIONARY = dict(
         36: 5,
         163: 5,
         164: 5,
+    }
+)
+
+# Dictionary mapping regions to variable block type
+BIOME_BLOCK_MAP_DICTIONARY = dict(
+    {
+        biome_regions.FOREST: block_codes.DARK_OAK_WOOD,
+        biome_regions.PLAINS: block_codes.DARK_OAK_WOOD,
+        biome_regions.DESERT: block_codes.SANDSTONE,
+        biome_regions.COLD: block_codes.EMERALD_ORE,
+        biome_regions.SAVANNA: block_codes.BROWN_TERRACOTTA,
     }
 )

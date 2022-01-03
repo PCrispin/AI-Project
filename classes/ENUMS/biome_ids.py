@@ -1,5 +1,7 @@
 from classes.ENUMS.block_codes import ExtendedEnum
 
+"""Biome ID enums, a list of minecraft biome ids, returned by minecraft program"""
+
 
 class biome_ids(ExtendedEnum):
     OCEAN = 0
@@ -85,6 +87,11 @@ class biome_ids(ExtendedEnum):
     LUSH_CAVES = 187
     DRIPSTONE_CAVES = 188
     STONY_PEAKS = 189
+
+
+"""
+Biome region enums, a region determines what type variable blocks are replaced with,
+i.e. a forest will have wooden variable blocks etc. """
 
 
 class biome_regions(ExtendedEnum):

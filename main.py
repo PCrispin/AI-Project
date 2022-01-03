@@ -3,7 +3,9 @@
 import sys
 import os
 import random
+from typing import Tuple
 from classes.ENUMS.biome_ids import biome_ids, biome_regions
+from classes.ENUMS.block_codes import block_codes
 from classes.Timer import Timer
 from classes.building_locations import BuildingLocations
 from classes.Graph import graph
@@ -13,6 +15,7 @@ from classes.Population import Population
 from classes.misc_functions import rectangles_overlap
 from constants import (
     AREA,
+    BIOME_BLOCK_MAP_DICTIONARY,
     BIOME_MAP_DICTIONARY,
     BUILDING_NUMBER,
     GENERATIONS,
@@ -49,18 +52,21 @@ def run_epochs(g_representation: graph) -> BuildingLocations:
             locations.locations[-1].build_coordinates
         )
 
-    village_biome = determine_village_biome(locations)
+    village_biome, variable_block_type = determine_village_biome(locations)
     return locations
 
 
-def determine_village_biome(locations: BuildingLocations):
+def determine_village_biome(
+    locations: BuildingLocations,
+) -> Tuple[biome_regions, block_codes]:
     biome_lst = []
     for location in locations.locations:
         biome_id = locations.get_biome(location=location, y_index=100)
         biome_region = biome_regions(BIOME_MAP_DICTIONARY.get(biome_id))
         biome_lst.append(biome_region.value)
     best_biome = biome_regions(max(set(biome_lst), key=biome_lst.count))
-    return best_biome
+    block_type = BIOME_BLOCK_MAP_DICTIONARY.get(best_biome)
+    return best_biome, block_type
 
 
 def generate_building_location_through_genetic_algorithm(
