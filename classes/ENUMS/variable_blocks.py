@@ -7,3 +7,8 @@ class variable_blocks(ExtendedEnum):
     SPRUCE_WOODS = block_codes.SPRUCE_PLANKS
     BROWN_TERRACOTTA = block_codes.BROWN_TERRACOTTA
     BRICKS = block_codes.BRICKS
+    QUARTZ = block_codes.BLOCK_OF_QUARTZ
+    ORANGE_TERRACOTTA = block_codes.ORANGE_TERRACOTTA
+    CYAN_TERRACOTTA = block_codes.CYAN_TERRACOTTA
+    CLAY = block_codes.CLAY
+    WHITE_TERRACOTTA = block_codes.WHITE_TERRACOTTA
