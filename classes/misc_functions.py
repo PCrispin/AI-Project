@@ -1,6 +1,7 @@
 from classes.Types import GridLocation
 from typing import Tuple
 from classes.ENUMS.orientations import orientations
+from constants import MINECRAFT_USERNAME
 from vendor.gdmc_http_client.interfaceUtils import runCommand
 
 
@@ -88,3 +89,17 @@ def draw_sign(
         "Text3:'\"" + text_line_3 + "\"', "
         "Text4:'\"" + text_line_4 + "\"'}"
     )
+
+
+def teleport_player(x_value: int, y_value: int, z_value: int):
+    tp_string = (
+        "tp "
+        + MINECRAFT_USERNAME
+        + " "
+        + str(x_value)
+        + " "
+        + str(y_value)
+        + " "
+        + str(z_value)
+    )
+    runCommand(tp_string)

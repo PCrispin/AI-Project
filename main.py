@@ -9,11 +9,11 @@ from classes.ENUMS.biome_ids import biome_regions
 from classes.ENUMS.block_codes import block_codes
 from classes.Timer import Timer
 from classes.building_locations import BuildingLocations
-from classes.Graph import graph
+from classes.Graph import graph, print_all_fitness_graphs
 from classes.http_interface import get_world_state
 from classes.Location_Genome import LocationGenome
 from classes.Population import Population
-from classes.misc_functions import rectangles_overlap
+from classes.misc_functions import rectangles_overlap, teleport_player
 from constants import (
     AREA,
     BIOME_BLOCK_MAP_DICTIONARY,
@@ -108,9 +108,7 @@ def remove_foliage(g: graph, buildings: BuildingLocations):
                     BLOCK_BATCH_SIZE,
                 )
 
-    # The correct way to TP the character :D
-    tp_string = "tp " + MINECRAFT_USERNAME + " " + str(x_min) + " 100 " + str(z_min)
-    runCommand(tp_string)
+    teleport_player(x_value=x_min, y_value=100, z_value=z_min)
 
 
 def generate_building_location_through_genetic_algorithm(

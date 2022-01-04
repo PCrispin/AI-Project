@@ -1,3 +1,0 @@
-- Speed up genetic algorithm by:
-    - Water distance metric via flood fill not calculation for every water tile
-- Add block displacement method for calculating flatness. 

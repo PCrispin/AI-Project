@@ -133,7 +133,7 @@ class graph:
                     self.tile_map[x_value][z_value].manhattan_distance_to_water,
                 )
         value = cum_distance / (x_value * z_value)
-        return value
+        return min(value, MAXIMUM_WATER_DISTANCE_PENALTY)
 
     def calculate_distance_from_houses(
         self, location: GridLocation, building_radius=MAX_BUILDING_RADIUS
@@ -154,7 +154,10 @@ class graph:
         )
 
         if PENALTY:
-            return MAXIMUM_HOUSE_DISTANCE_PENALTY
+            # calculate the closest house centre.
+            nearest_location = calculate_nearest_house(g=self, location=location)
+            adjusted_distance = manhattan(nearest_location, location)
+            return MAXIMUM_HOUSE_DISTANCE_PENALTY - adjusted_distance
 
         cum_distance = 0
         for building_location in self.buildings_centres:
@@ -163,13 +166,13 @@ class graph:
         value = cum_distance / len(self.buildings_centres)
         if value == 0:
             print("Yikes")
-        return value
+        return min(value, MAXIMUM_HOUSE_DISTANCE_PENALTY)
 
     def _calculate_penalty(self, location, building_radius, type: fitness_functions):
         coords = self._calc_coordinates(location, building_radius)
 
         if type == fitness_functions.HOUSE_DISTANCE:
-            for building_coords in self.buildings_coords:
+            for building_coords in self.get_buildings_coords():
                 if rectangles_overlap(coords, building_coords):
                     return True
 
@@ -251,6 +254,15 @@ class graph:
                 g=self,
             )
 
+    def get_building_centres(self) -> list:
+        return list(set(self.buildings_centres.copy()))
+
+    def get_building_tiles(self) -> list:
+        return list(set(self.building_tiles.copy()))
+
+    def get_buildings_coords(self) -> list:
+        return list(set(self.buildings_coords.copy()))
+
 
 def manhattan(a_value, b_value):
     """Calculate manhattan distance value between two vectors
@@ -276,7 +288,7 @@ def surface_plot(matrix, **kwargs):
 
 
 def show_plt(m):
-    (fig, ax, surf) = surface_plot(m, cmap=plt.cm.coolwarm)
+    (fig, ax, surf) = surface_plot(m, cmap=plt.cm.binary)
 
     fig.colorbar(surf)
 
@@ -287,17 +299,18 @@ def show_plt(m):
     plt.show()
 
 
-def show_2d_heatmap(arr: np.array, filename: str):
+def show_2d_heatmap(arr: np.array, filename: str, title: str = "test123"):
     arr = arr.T  # transpose x and z axis
     heatmap, ax = plt.subplots()
     im = ax.imshow(
         arr,
-        cmap=plt.cm.coolwarm,
+        cmap=plt.cm.binary,
         interpolation="nearest",
         origin="lower",
         aspect="auto",
     )
     ax.set(xlabel="Z coordinate", ylabel="X coordinate")
+    ax.set_title(title)
     heatmap.savefig(IMAGE_DIR_FOLD + "/" + filename + ".png")
 
 
@@ -316,7 +329,8 @@ def run_fitness_for_all_coords(fitness: fitness_functions, g: graph, show_plot=F
         w_b_m = mm_scale(w_b_m)
         if show_plot:
             show_plot(w_b_m)
-        show_2d_heatmap(w_b_m, fitness.value)
+        title: str = "Water Boolean heatmap"
+        show_2d_heatmap(w_b_m, fitness.value, title)
         return w_b_m
 
 
@@ -334,34 +348,42 @@ def run_bounded_fitness_for_all_coords(
     show_plot=False,
 ):
     fitness_map = []
-    # adjust the house fitness map with a mock house at 20, 20), with a build radius of 7
-    location = (20, 20)
-    coords: Tuple[int, int, int, int] = (
-        cut_out_bounds(location[0] - building_radius, g.x),
-        cut_out_bounds(location[1] - building_radius, g.z),
-        cut_out_bounds(location[0] + building_radius, g.x),
-        cut_out_bounds(location[1] + building_radius, g.z),
+
+    add_mock_location(
+        g=g,
+        building_radius=building_radius,
+        location=(20, 20),
     )
-    building_tiles = get_build_coord(location=location, building_radius=building_radius)
-    g.building_tiles.extend(building_tiles)
-    g.buildings_centres.append(location)
-    g.buildings_coords.append(coords)
+
+    add_mock_location(
+        g=g,
+        building_radius=building_radius,
+        location=(200, 200),
+    )
+
     for x_value in range(building_radius, g.x - building_radius):
         tile = []
         for z_value in range(building_radius, g.z - building_radius):
             if fitness == fitness_functions.WATER_DISTANCE:
+                title: str = (
+                    "Water distance fitness heatmap determined by manhattan distance"
+                )
                 tile.append(
                     g.calcuate_water_distance(
                         (x_value, z_value), building_radius=building_radius
                     )
                 )
             if fitness == fitness_functions.HOUSE_DISTANCE:
+                title: str = (
+                    "House distance fitness heatmap determined by manhattan distance"
+                )
                 tile.append(
                     g.calculate_distance_from_houses(
                         (x_value, z_value), building_radius=building_radius
                     )
                 )
             if fitness == fitness_functions.FLATNESS:
+                title: str = "Flatness fitness heatmap determined by standard deviation"
                 tile.append(
                     g.calculate_flatness_from_location(
                         (x_value, z_value), building_radius=building_radius
@@ -372,8 +394,21 @@ def run_bounded_fitness_for_all_coords(
     f_m = mm_scale(f_m)
     if show_plot:
         show_plt(f_m)
-    show_2d_heatmap(f_m, fitness.value)
+    show_2d_heatmap(f_m, fitness.value, title)
     return f_m
+
+
+def add_mock_location(g: graph, building_radius: int, location: tuple[int, int]):
+    coords: Tuple[int, int, int, int] = (
+        cut_out_bounds(location[0] - building_radius, g.x),
+        cut_out_bounds(location[1] - building_radius, g.z),
+        cut_out_bounds(location[0] + building_radius, g.x),
+        cut_out_bounds(location[1] + building_radius, g.z),
+    )
+    building_tiles = get_build_coord(location=location, building_radius=building_radius)
+    g.building_tiles.extend(building_tiles)
+    g.buildings_centres.append(location)
+    g.buildings_coords.append(coords)
 
 
 def print_all_fitness_graphs(g: graph):
@@ -384,5 +419,18 @@ def print_all_fitness_graphs(g: graph):
     fitness_maps = []
     for fitness in fitness_functions:
         fitness_maps.append(g.visualise(fitness=fitness))
-    f_m = np.add(fitness_maps[0], fitness_maps[1])
-    show_plt(f_m)
+    f_m = np.array([fitness_maps[0], fitness_maps[1], fitness_maps[2]])
+    fm = f_m.sum(axis=0)
+    show_plt(fm)
+    show_2d_heatmap(fm, "all_fitness", "Layered Fitness Heatmap")
+
+
+def calculate_nearest_house(g: graph, location: tuple[int, int]) -> tuple[int, int]:
+    house_centres = g.get_building_centres()
+    manhattan_distances = []
+    for house_centre in house_centres:
+        manhattan_distances.append(manhattan(location, house_centre))
+
+    return house_centres[
+        min(range(len(manhattan_distances)), key=manhattan_distances.__getitem__)
+    ]

@@ -11,8 +11,8 @@ BUILDING_DISTANCE_WEIGHTING: float = 2
 FLATNESS_FITNESS_WEIGHTING: float = 1
 DEFAULT_MUTATION_RATE: float = 1 / 6
 DEFAULT_POPULATION_SIZE: int = 5
-GENERATIONS: int = 40
-BUILDING_NUMBER: int = 13
+GENERATIONS: int = 100
+BUILDING_NUMBER: int = 10
 POPULATION_SIZE: int = 100
 AREA: tuple[int, int, int, int] = (
     0,
@@ -24,7 +24,7 @@ WATER_SEARCH_RADIUS: int = (
     MAX_BUILDING_RADIUS * 2
 )  # How far to search from building location for water, should be larger than MAX_BUILDING_RADIUS
 MAXIMUM_WATER_DISTANCE_PENALTY: int = MAX_BUILDING_RADIUS
-MAXIMUM_HOUSE_DISTANCE_PENALTY: int = AREA[2] + AREA[3]
+MAXIMUM_HOUSE_DISTANCE_PENALTY: int = max(AREA[2], AREA[3])
 IMAGE_DIR_FOLD: str = "data/images"
 
 DEBUG_DRAW_WORKINGS: bool = False  # yellow/orange-first in frontier, light blue-candidate, NOT_POSSIBLE: Gray-drop or black
