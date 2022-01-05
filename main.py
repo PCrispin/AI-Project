@@ -97,7 +97,12 @@ def remove_foliage(g: graph, buildings: BuildingLocations):
     z_min: int = min(all_building_coord, key=lambda t: t[1])[1]
     z_max: int = max(all_building_coord, key=lambda t: t[3])[3]
 
-    for x_value in range(max(x_min, AREA[0]), min(x_max, AREA[2])):
+    x_value_max = min(x_max, AREA[2])
+    x_value_min = max(x_min, AREA[0])
+
+    for x_value in range(x_value_min, x_value_max):
+        if x_value == x_value_min or x_value % 50 == 0 :
+            print(f"Foliage removed {100*(x_value - x_value_min)/(x_value_max - x_value_min):.0f}%")
         for z_value in range(max(x_min, AREA[1]), min(z_max, AREA[3])):
             for i in range(FOLIAGE_CLEARING_HEIGHT):
                 placeBlockBatched(

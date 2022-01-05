@@ -5,11 +5,13 @@ from classes.Bool_map import bool_map
 from classes.ENUMS.building_types import building_types
 from classes.ENUMS.building_styles import building_styles
 from classes.ENUMS.building_names import building_names
-from constants import VISITS_PER_BUILDING_TYPE, AREA_EXPANDED_MARGIN
+from constants import VISITS_PER_BUILDING_TYPE, AREA_EXPANDED_MARGIN, MCTS_TIME_LIMIT_SECONDS, USE_BFS_WITH_LOCATION_COUNT
 from typing import Tuple, List, Dict
 from collections import Counter
 from sys import maxsize 
 import time
+import math
+import random
 
 
 class building_site(object):
@@ -379,6 +381,10 @@ class building_site(object):
             if not add_type(building_types.HOUSE) :
                 break
 
+        can_build_type =  [[ build_type in building_types_fit_in_sites[location_l] \
+                                for build_type in building_types if build_type != building_types.UNKNOWN ] \
+                                for location_l in locations_available ]
+
         #Check the sites to make sure there is at least one building that will fit.
         sites_with_no_possible_buildings = list(filter(lambda site: site == True, example_solution_sites_available))
         for site in sites_with_no_possible_buildings:
@@ -394,6 +400,9 @@ class building_site(object):
 
         chosen_house_locations = []
 
+        find_solution = ( (0, building_types.FACTORY), (1, building_types.RESTAURANT), (2, building_types.FLATS), (3, building_types.SHOP)
+                        , (4, building_types.HOUSE), (5, building_types.HOUSE), (6, building_types.HOUSE), (7, building_types.HOUSE))
+
         class attempt_details():
             def __init__(self, parent: 'attempt_details', location_index: int, building: building_types, is_top_node: bool = False):
                 self.parent: 'attempt_details' = parent
@@ -405,6 +414,21 @@ class building_site(object):
             def get_top_node(cls):
                 return cls(None, -1, building_types.UNKNOWN, True)
 
+        def bfs(  attempt: attempt_details
+                                , house_count: int
+                                , locations_list : List[int]) -> Tuple[int, List[Tuple[int, building_types]]]:
+            print("\nStarting search for best locations")
+
+            winning_score, winning_building_locations = recursive_bfs_step1(attempt, house_count, locations_list)
+
+            mins, sec = divmod(time.time() - start_bfs, 60)
+            print(f"\n\nTotal Time elapsed BFS: {mins:.0f}m {sec:.0f}s")
+            print(f"BFS Total distance: {winning_score}")
+
+            for winning_building_location in winning_building_locations: #type: Tuple[int, building_types]
+                print(f"Building location: {winning_building_location[0]} -> {winning_building_location[1].name}")
+
+            return winning_score, winning_building_locations    
         ################################################################################################################
         #find places for houses in step 1.  This is done first so that the following is not considered separately:
         #{HouseA in Location1, HouseB in Location2} and {HouseB in Location1, HouseA in Location2}
@@ -417,21 +441,26 @@ class building_site(object):
                 return recursive_bfs_step2(attempt, building_types_in_village_not_houses, locations_list)
 
             winning_score = maxsize
+            winning_building_locations = []
             available_locations_count = len(locations_list) - house_count + 1
 
-            for i in range(available_locations_count) : #type: int
+            for location_index in range(available_locations_count) : #type: int
 
-                if house_count == total_no_of_houses and winning_score != maxsize:
+                if house_count == total_no_of_houses :
                     mins, sec = divmod(time.time() - start_bfs, 60)
-                    print(f"Find optimum locations {100*i/available_locations_count:.0f}% complete  {mins:.0f}m {sec:.0f}s Winning score: {winning_score}")
+                    if winning_score == maxsize:
+                        print(f"Find optimum locations {100*location_index/available_locations_count:.0f}% complete  {mins:.0f}m {sec:.0f}s No winning score found yet")
+                    else:
+                        print(f"Find optimum locations {100*location_index/available_locations_count:.0f}% complete  {mins:.0f}m {sec:.0f}s Winning score: {winning_score}")
 
-                if building_types.HOUSE in building_types_fit_in_sites[locations_list[i]]:
-                    location = locations_list.pop(i)
+
+                if can_build_type[location_index][building_types.HOUSE.value] :
+                    location = locations_list.pop(location_index)
 
                     candidate_score, candidate_building_locations = recursive_bfs_step1(
                           attempt_details(attempt, location, building_types.HOUSE), house_count - 1, locations_list)
 
-                    locations_list.insert(i, location)
+                    locations_list.insert(location_index, location)
 
                     if candidate_score < winning_score :
                         winning_score = candidate_score
@@ -439,15 +468,19 @@ class building_site(object):
 
             return winning_score, winning_building_locations
 
+
         ################################################################################################################
         def recursive_bfs_step2(     attempt: attempt_details
                                    , buildings_list : List[building_types]
                                    , locations_list : List[int]) -> Tuple[int, List[Tuple[int, building_types]]]:
+
             if not locations_list :
         
                 function_building_locations = []
                 house_location_adresses = []
                 building_locations = []
+                flat_addresses = []
+
                 while not attempt.is_top_node:
                     building_locations.append(
                         (attempt.location_index, attempt.building)
@@ -455,12 +488,20 @@ class building_site(object):
                     if attempt.building == building_types.HOUSE:
                         house_location_adresses.append(attempt.location_index)
                     elif attempt.building == building_types.FLATS:
-                        flat_address = attempt.location_index
+                        flat_addresses.append(attempt.location_index)
                     else:
                         function_building_locations.append(
                             (attempt.location_index, attempt.building)
                         )
                     attempt = attempt.parent
+
+                found = True
+                for find in find_solution:
+                    if find not in building_locations :
+                        found = False
+                        break
+                if found :
+                    print("Found!!!!")
 
                 total_distance = 0
                 for candidate_address, candidate_building in function_building_locations: #type: int, building_types
@@ -468,7 +509,8 @@ class building_site(object):
                     
                     for house_address in house_location_adresses: #type: int
                         total_distance += visit_count * distances[candidate_address][house_address]
-                    total_distance += visit_count * number_of_families_in_a_flat * distances[candidate_address][flat_address]
+                    for flat_address in flat_addresses: #type: int
+                        total_distance += visit_count * number_of_families_in_a_flat * distances[candidate_address][flat_address]
 
                 return total_distance, building_locations
 
@@ -477,15 +519,20 @@ class building_site(object):
 
             location = locations_list.pop(0)
 
+            can_build_type_at_location = can_build_type[locations_available.index(location)]
+
             for i in range(len(buildings_list)): #type: int
 
-                if buildings_list[i] in building_types_fit_in_sites[location]:
+                if locations_list == [1,2,3] :
+                    print("Here!")
+
+                if can_build_type_at_location[buildings_list[i].value] :
                     building = buildings_list.pop(i)
 
                     candidate_score, candidate_building_locations = recursive_bfs_step2(
                           attempt_details(attempt, location, building), buildings_list, locations_list)
 
-                    buildings_list.insert(1, building)
+                    buildings_list.insert(i, building)
 
                     if candidate_score < winning_score :
                         winning_score = candidate_score
@@ -495,18 +542,223 @@ class building_site(object):
 
             return winning_score, winning_building_locations
 
+        class MCTS_details():
+            def __init__(self
+                         , parent: 'attempt_details'
+                         , location_index: int
+                         , remaining_location_indeces: List[int]
+                         , build: building_types
+                         , remaining_builds: List[building_types]
+                         , is_top_node: bool = False):
+                self.parent: 'MCTS_details' = parent
+                self.total: int = 0
+                self.visits: int = 0
+                self.is_top_node: bool = is_top_node
+                self.depth: int = 0 if is_top_node else parent.depth + 1
+
+
+                self.location_index: int = location_index
+                self.remaining_location_indeces: List[int] = remaining_location_indeces
+                self.build: building_types =  build
+                self.remaining_builds: List[building_types] = remaining_builds
+
+                self.is_leaf: bool = True
+                self.children: List['MCTS_details'] = []
+
+            @classmethod
+            def get_top_node(cls, all_location_indeces: List[int], building_types_in_village: List[building_types]):
+                return cls(None, -1, all_location_indeces, building_types.UNKNOWN, building_types_in_village, True)
+
+            def ucb1_score(self, variable_c: float, max_score: int) -> float :
+                if self.visits == 0 :
+                    return float('inf')
+                elif self.is_top_node:
+                    return 0
+                else:
+                    #max_score - average score is used so that lower scores are better.
+                    #variable_c = sqrt(2) * the score range.  This will ecourage unlucky potentials, but also allow convergence.
+                    return max(0, max_score - (self.total / self.visits)) + variable_c * math.sqrt(math.log(self.parent.visits) / self.visits)
+
+            def lowest_scoring_child(self, variable_c: float, max_score: int) -> 'MCTS_details' :
+                if len(self.children) == 0:
+                    return None
+
+                winning_score = self.children[0].ucb1_score(variable_c, max_score)
+                winning_index = 0
+
+                for index in range(1, len(self.children)): #type: int
+                    s = self.children[index].ucb1_score(variable_c, max_score)
+                    if s == float('inf') :
+                        return self.children[index]
+                    elif s > winning_score :
+                        winning_score = s
+                        winning_index = index
+
+                return self.children[winning_index]
+
+            def create_leaves(self) -> List['MCTS_details'] :
+                if len(self.remaining_location_indeces) == 0 :
+                    return False
+                
+                next_remaining_builds = []
+                next_remaining_build = []
+                for j in range(len(self.remaining_builds)) :
+                    next = self.remaining_builds[:]
+                    next_remaining_build.append(next.pop(j))
+                    next_remaining_builds.append(next)
+
+                for i in range(len(self.remaining_location_indeces)) :
+                    next_remaining_locations = self.remaining_location_indeces[:]
+                    next_location = next_remaining_locations.pop(i)
+
+                    for j in range(len(self.remaining_builds)) :
+                        if can_build_type[next_location][next_remaining_build[j].value] :
+                            self.children.append(MCTS_details(  self
+                                                              , next_location
+                                                              , next_remaining_locations
+                                                              , next_remaining_build[j]
+                                                              , next_remaining_builds[j]
+                                                              , False)
+                                                 )
+
+                self.is_leaf = False
+
+                return True
+
+            def rollout(self, max_score: int) -> Tuple[int, List[Tuple[int, building_types]]]:
+                attempt = self
+
+                function_building_locations = []
+                house_location_adresses = []
+                building_locations = []
+                flat_addresses = []
+                
+                def add_node(loc_ind: int, add_build: building_types) :
+                    building_locations.append( (loc_ind, add_build) )
+                    if add_build == building_types.HOUSE:
+                        house_location_adresses.append(loc_ind)
+                    elif add_build == building_types.FLATS:
+                        flat_addresses.append(loc_ind)
+                    else:
+                        function_building_locations.append( (loc_ind, add_build) )
+
+                while not attempt.is_top_node:
+                    add_node(attempt.location_index, attempt.build)
+                    attempt = attempt.parent
+
+                random.shuffle(self.remaining_builds)
+                for index in range(len(self.remaining_location_indeces)):
+                    l = self.remaining_location_indeces[index]
+                    b = self.remaining_builds[index]
+                    count = 1
+                    while not can_build_type[l][b.value] and index + count < len(self.remaining_builds):
+                        new_index = index + count
+                        self.remaining_builds[index], self.remaining_builds[new_index] = self.remaining_builds[new_index], self.remaining_builds[index]
+                        b = self.remaining_builds[index]
+                        count += 1
+                    add_node(l, b)
+
+                total_distance = 0
+                for candidate_address, candidate_building in function_building_locations: #type: int, building_types
+                    visit_count = VISITS_PER_BUILDING_TYPE[candidate_building.value]
+                    
+                    if not can_build_type[candidate_address][candidate_building.value] :
+                        visit_count *= 3 #penalty for being impossible.
+
+                    for house_address in house_location_adresses: #type: int
+                        total_distance += visit_count * distances[candidate_address][house_address]
+                    for flat_address in flat_addresses: #type: int
+                        total_distance += visit_count * number_of_families_in_a_flat * distances[candidate_address][flat_address]
+
+                self.add_score(total_distance)
+
+                return total_distance, building_locations
+
+            def add_score(self, score: int):
+                self.visits += 1
+                self.total += score
+
+                if not self.is_top_node :
+                    self.parent.add_score(score)
+
+        ################################################################################################################
+        def monte_carlo_tree_search(time_limit_seconds: int) -> Tuple[int, List[Tuple[int, building_types]]]:
+            root = MCTS_details.get_top_node(locations_available, building_types_in_village)
+
+            start_time = time.time()
+            time_interval = time_limit_seconds / 10
+            interval_count = 10
+            next_report_time = start_time + time_interval
+            rollout_count = 0
+            reached_end_node = False
+
+            biggest_score = 0
+            building_locations = []
+            lowest_score = maxsize
+            max_depth = 0
+
+            while True:
+                if reached_end_node or time.time() - start_time > time_limit_seconds :
+                    break
+
+                if time.time() > next_report_time : 
+                    next_report_time += time_interval
+                    mins, sec = divmod(time.time() - start_time, 60)
+                    print(f"MCTS - {interval_count}% done - Performed {rollout_count} roll outs; Score - {lowest_score};  Time elapsed BFS: {mins:.0f}m {sec:.0f}s")
+                    interval_count += 10
+
+                variable_c: float = max(1, biggest_score - lowest_score) * math.sqrt(2) 
+
+                current: 'MCTS_details' = root
+
+                while current:
+                    if current.is_leaf :
+                        if current.visits == 0 :
+                            score, n = current.rollout(biggest_score)
+                        else:
+                            if current.create_leaves() :
+                                current = current.children[0]
+                                score, n = current.rollout(biggest_score)
+                            else :
+                                reached_end_node = True
+                        rollout_count += 1
+                        if biggest_score < score :
+                            biggest_score = score
+                        if lowest_score > score :
+                            is_possible = True
+                            for candidate_address, candidate_building in n: #type: int, building_types
+                                if not can_build_type[candidate_address][candidate_building.value] :
+                                    is_possible = False
+                                    break
+                            if is_possible :
+                                lowest_score = score
+                                building_locations = n
+                        if max_depth < current.depth :
+                            max_depth = current.depth
+                        break
+                    else:
+                        current = current.lowest_scoring_child(variable_c, biggest_score)
+            
+            print(f"MCTS - Performed {rollout_count} roll outs; Score - {lowest_score};  Max depth: {max_depth}; {time_limit_seconds} seconds")
+
+            for building_location in building_locations: #type: Tuple[int, building_types]
+                print(f"Building location: {building_location[0]} -> {building_location[1].name}")
+
+            return biggest_score, building_locations
+
+
         ################################################################################################################
 
-        total_distance, building_location_types = recursive_bfs_step1(attempt_details.get_top_node(), total_no_of_houses, locations_available)
+        if len(locations_available) <= USE_BFS_WITH_LOCATION_COUNT :
+            total_distance, building_location_types = bfs(attempt_details.get_top_node(), total_no_of_houses, locations_available[:])
+        else:
+            total_distance, building_location_types = monte_carlo_tree_search(MCTS_TIME_LIMIT_SECONDS)
 
-        print(f"Total distance: {total_distance}")
-        for building_location_type in building_location_types: #type: Tuple[int, building_types]
-            print(f"Building location: {building_location_type[0]} -> {building_location_type[1].name}")
         for index in range(len(site_roads_count)): #type: int
             if not site_roads_count :
                 print(f"Building location: {index} -> NONE due to no roads.")
 
-        mins, sec = divmod(time.time() - start_bfs, 60)
-        print(f"\n\nTotal Time elapsed BFS: {mins:.0f}m {sec:.0f}s")
-
         return building_location_types
+
+
+

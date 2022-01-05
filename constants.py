@@ -2,7 +2,7 @@
 
 from classes.ENUMS.biome_ids import biome_regions
 from classes.ENUMS.block_codes import block_codes
-from typing import Tuple
+from typing import Tuple, Dict
 
 MAX_BUILDING_RADIUS: int = 13  # SHOULD BE ODD
 MIN_BUILDING_RADIUS: int = 7
@@ -11,10 +11,10 @@ BUILDING_DISTANCE_WEIGHTING: float = 2
 FLATNESS_FITNESS_WEIGHTING: float = 1
 DEFAULT_MUTATION_RATE: float = 1 / 6
 DEFAULT_POPULATION_SIZE: int = 5
-GENERATIONS: int = 40
-BUILDING_NUMBER: int = 13
-POPULATION_SIZE: int = 100
-AREA: tuple[int, int, int, int] = (
+GENERATIONS: int = 20
+BUILDING_NUMBER: int = 15
+POPULATION_SIZE: int = 30
+AREA: Tuple[int, int, int, int] = (
     0,
     0,
     256,
@@ -26,6 +26,9 @@ WATER_SEARCH_RADIUS: int = (
 MAXIMUM_WATER_DISTANCE_PENALTY: int = MAX_BUILDING_RADIUS
 MAXIMUM_HOUSE_DISTANCE_PENALTY: int = AREA[2] + AREA[3]
 IMAGE_DIR_FOLD: str = "data/images"
+
+USE_BFS_WITH_LOCATION_COUNT = 12 #Set the number of properties BFS is used, above this number MCTS is used.  Set to -1 if want MCTS all the time...
+MCTS_TIME_LIMIT_SECONDS: int = 120
 
 DEBUG_DRAW_WORKINGS: bool = False  # yellow/orange-first in frontier, light blue-candidate, NOT_POSSIBLE: Gray-drop or black
 MAX_DETOUR: int = 110
@@ -47,7 +50,7 @@ RANDOM_SEED: int = 10
 
 
 # Dictionary mapping biome ID to internal biome regional id
-BIOME_MAP_DICTIONARY: dict = dict(
+BIOME_MAP_DICTIONARY: Dict[int,int] = dict(
     {
         4: 1,
         18: 1,
@@ -84,7 +87,7 @@ BIOME_MAP_DICTIONARY: dict = dict(
 )
 
 # Dictionary mapping regions to variable block type
-BIOME_BLOCK_MAP_DICTIONARY: dict = dict(
+BIOME_BLOCK_MAP_DICTIONARY: Dict[biome_regions, block_codes] = dict(
     {
         biome_regions.FOREST: block_codes.DARK_OAK_WOOD,
         biome_regions.PLAINS: block_codes.DARK_OAK_WOOD,
@@ -102,6 +105,9 @@ ABORT_SEARCH_FOR_SITE_AFTER_ROUTE_NOT_FOUND_LIMIT: int = 4
 MAX_HEIGHT_DROP: int = 1
 MAX_DEPTH: int = 500
 AREA_EXPANDED_MARGIN: int = 5
+
+
+
 
 FOLIAGE_CLEARING_HEIGHT: int = 20
 MINECRAFT_USERNAME: str = "EnviableMonkey"
