@@ -10,15 +10,15 @@ from classes.ENUMS.building_styles import building_styles
 #        , building_face_direction = orientations.NORTH
 #        )
 
-#Builder.build_one_of_everything_variable_blocks(
-#          location = (0, 0)
-#        , ground_height = 3
-#        , building_face_direction = orientations.NORTH
-#        )
+Builder.build_one_of_everything_variable_blocks(
+          location = (0, 0)
+        , ground_height = 3
+        , building_face_direction = orientations.NORTH
+        )
 
-Builder.analyze_and_create(
-    [(227, 188), (228, 69), (170, 61), (235, 108), (109, 207), (164, 114), (222, 40), (199, 84), (160, 13), (221, 158), (133, 169), (111, 163), (151, 181)]
-    , [9, 8, 9, 11, 11, 7, 10, 8, 12, 8, 7, 11, 7]
-    , block_codes.DARK_OAK_WOOD
-    , building_styles.CUSTOM
-    )
+#Builder.analyze_and_create(
+#    [(57, 123), (34, 123), (52, 99), (138, 124), (24, 155), (79, 115), (50, 146), (73, 169), (136, 143), (66, 189), (14, 96), (67, 83), (40, 68), (132, 179), (61, 33), (163, 137), (153, 170), (86, 141), (165, 94), (54, 166), (78, 224), (93, 204), (88, 64)]
+#    , [10, 11, 7, 8, 8, 7, 7, 11, 8, 8, 9, 7, 9, 7, 12, 9, 8, 7, 9, 7, 12, 7, 7]
+#    , block_codes.DARK_OAK_WOOD
+#    , building_styles.CUSTOM
+#    )
