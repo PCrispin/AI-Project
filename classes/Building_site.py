@@ -400,9 +400,6 @@ class building_site(object):
 
         chosen_house_locations = []
 
-        find_solution = ( (0, building_types.FACTORY), (1, building_types.RESTAURANT), (2, building_types.FLATS), (3, building_types.SHOP)
-                        , (4, building_types.HOUSE), (5, building_types.HOUSE), (6, building_types.HOUSE), (7, building_types.HOUSE))
-
         class attempt_details():
             def __init__(self, parent: 'attempt_details', location_index: int, building: building_types, is_top_node: bool = False):
                 self.parent: 'attempt_details' = parent
@@ -494,14 +491,6 @@ class building_site(object):
                             (attempt.location_index, attempt.building)
                         )
                     attempt = attempt.parent
-
-                found = True
-                for find in find_solution:
-                    if find not in building_locations :
-                        found = False
-                        break
-                if found :
-                    print("Found!!!!")
 
                 total_distance = 0
                 for candidate_address, candidate_building in function_building_locations: #type: int, building_types
