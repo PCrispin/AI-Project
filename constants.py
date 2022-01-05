@@ -11,9 +11,9 @@ BUILDING_DISTANCE_WEIGHTING: float = 2
 FLATNESS_FITNESS_WEIGHTING: float = 1
 DEFAULT_MUTATION_RATE: float = 1 / 6
 DEFAULT_POPULATION_SIZE: int = 5
-GENERATIONS: int = 20
-BUILDING_NUMBER: int = 15
-POPULATION_SIZE: int = 30
+GENERATIONS: int = 100
+BUILDING_NUMBER: int = 10
+POPULATION_SIZE: int = 100
 AREA: Tuple[int, int, int, int] = (
     0,
     0,
@@ -24,7 +24,7 @@ WATER_SEARCH_RADIUS: int = (
     MAX_BUILDING_RADIUS * 2
 )  # How far to search from building location for water, should be larger than MAX_BUILDING_RADIUS
 MAXIMUM_WATER_DISTANCE_PENALTY: int = MAX_BUILDING_RADIUS
-MAXIMUM_HOUSE_DISTANCE_PENALTY: int = AREA[2] + AREA[3]
+MAXIMUM_HOUSE_DISTANCE_PENALTY: int = max(AREA[2], AREA[3])
 IMAGE_DIR_FOLD: str = "data/images"
 
 USE_BFS_WITH_LOCATION_COUNT = 12 #Set the number of properties BFS is used, above this number MCTS is used.  Set to -1 if want MCTS all the time...

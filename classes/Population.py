@@ -126,7 +126,7 @@ class Population:
                     member.water_distance_fitness = water_fitness
                     water_distance_fitness.append(water_fitness)
 
-        if len(self.graph.building_tiles) != 0:
+        if len(self.graph.get_building_tiles()) != 0:
             for member in self.members:
                 distance_fitness = self.graph.calculate_distance_from_houses(
                     location=(member.x, member.z),
@@ -154,7 +154,7 @@ class Population:
         for i in range(len(self.members)):
             if len(self.graph.water_tiles) != 0:
                 self.members[i].fitness += water_distance_fitness[i]
-            if len(self.graph.building_tiles) != 0:
+            if len(self.graph.get_building_tiles()) != 0:
                 self.members[i].fitness += (
                     building_distance_fitness[i] / BUILDING_DISTANCE_WEIGHTING
                 )
