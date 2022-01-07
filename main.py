@@ -9,7 +9,7 @@ from classes.ENUMS.biome_ids import biome_regions
 from classes.ENUMS.block_codes import block_codes
 from classes.Timer import Timer
 from classes.building_locations import BuildingLocations
-from classes.Graph import graph, print_all_fitness_graphs
+from classes.Graph import add_mock_location, graph, print_all_fitness_graphs
 from classes.http_interface import get_world_state
 from classes.Location_Genome import LocationGenome
 from classes.Population import Population
@@ -101,17 +101,20 @@ def remove_foliage(g: graph, buildings: BuildingLocations):
     x_value_min = max(x_min, AREA[0])
 
     for x_value in range(x_value_min, x_value_max):
-        if x_value == x_value_min or x_value % 50 == 0 :
-            print(f"Foliage removed {100*(x_value - x_value_min)/(x_value_max - x_value_min):.0f}%")
+        if x_value == x_value_min or x_value % 50 == 0:
+            print(
+                f"Foliage removed {100*(x_value - x_value_min)/(x_value_max - x_value_min):.0f}%"
+            )
         for z_value in range(max(x_min, AREA[1]), min(z_max, AREA[3])):
             for i in range(FOLIAGE_CLEARING_HEIGHT):
-                placeBlockBatched(
-                    x_value,
-                    g.tile_map[x_value][z_value].z + i,
-                    z_value,
-                    block_codes.AIR.value,
-                    BLOCK_BATCH_SIZE,
-                )
+                if g.tile_map[x_value][z_value].material != block_codes.AIR.value:
+                    placeBlockBatched(
+                        x_value,
+                        g.tile_map[x_value][z_value].z + i,
+                        z_value,
+                        block_codes.AIR.value,
+                        BLOCK_BATCH_SIZE,
+                    )
 
     teleport_player(x_value=x_min, y_value=100, z_value=z_min)
 
@@ -153,23 +156,101 @@ def enable_print():
 
 
 @Timer(text="Program executed ran in {:.2f} seconds")
-def main(debug=False, removefoliage=True):
+def main(debug=False, removefoliage=True, skipGA=True, printFitnessGraphs=True):
     print("Starting Program")
-
     if not debug:
         block_print()
+
     g_start = get_world_state(area=AREA)
+    if skipGA:
+        buildings = override_ga()
+    else:
 
-    # print_all_fitness_graphs(g=g_start)
-    buildings = run_epochs(g_start)
-    remove_overlapping_buildings(buildings)
-    if removefoliage:
-        remove_foliage(g=g_start, buildings=buildings)
+        buildings = run_epochs(g_start)
+        remove_overlapping_buildings(buildings)
 
+    # if removefoliage:
+    #     remove_foliage(g=g_start, buildings=buildings)
+
+    if printFitnessGraphs:
+        print("Calculating Fitness Maps")
+        for location in buildings.locations:
+            add_mock_location(
+                g=g_start,
+                building_radius=location.building_radius,
+                location=(location.x, location.z),
+            )
+        print_all_fitness_graphs(g=g_start)
+
+    determine_village_biome(locations=buildings)
     buildings.paint_buildings()
 
     if not debug:
         enable_print()
+
+
+def override_ga() -> BuildingLocations:
+    """Skips GA to use a predetermined list of locaiton coordinates."""
+    override_locations = [
+        (155, 148),
+        (79, 139),
+        (122, 203),
+        (109, 147),
+        (85, 228),
+        (160, 82),
+        (136, 64),
+        (108, 232),
+        (214, 39),
+        (131, 86),
+        (201, 204),
+        (60, 116),
+        (70, 160),
+        (117, 178),
+        (101, 116),
+        (183, 51),
+        (186, 118),
+        (92, 51),
+        (192, 71),
+        (223, 122),
+        (221, 68),
+        (50, 186),
+        (116, 59),
+    ]
+    override_radii = [
+        7,
+        7,
+        7,
+        8,
+        10,
+        7,
+        7,
+        8,
+        9,
+        7,
+        8,
+        10,
+        7,
+        9,
+        7,
+        7,
+        7,
+        12,
+        7,
+        7,
+        7,
+        7,
+        10,
+    ]
+    buildings = BuildingLocations(world_slice=WorldSlice(AREA))
+    for index, location in enumerate(override_locations):
+        location = LocationGenome(
+            graph_space=(AREA[2], AREA[3]),
+            grid_location=location,
+            building_radius=override_radii[index],
+        )
+        buildings.add_building(location)
+
+    return buildings
 
 
 def remove_overlapping_buildings(buildings):
@@ -216,5 +297,26 @@ if __name__ == "__main__":
         help="Remove Folliage",
         default=True,
     )
+
+    parser.add_argument(
+        "--skipga",
+        metavar="path",
+        required=False,
+        help="Remove Folliage",
+        default=True,
+    )
+
+    parser.add_argument(
+        "--savefitnessgraphs",
+        metavar="path",
+        required=False,
+        help="Save fitness graphs to image directory",
+        default=True,
+    )
     args = parser.parse_args()
-    main(debug=args.debug, removefoliage=args.removefoliage)
+    main(
+        debug=args.debug,
+        removefoliage=args.removefoliage,
+        skipGA=args.skipga,
+        printFitnessGraphs=args.savefitnessgraphs,
+    )

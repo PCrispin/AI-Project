@@ -349,17 +349,17 @@ def run_bounded_fitness_for_all_coords(
 ):
     fitness_map = []
 
-    add_mock_location(
-        g=g,
-        building_radius=building_radius,
-        location=(20, 20),
-    )
+    # add_mock_location(
+    #     g=g,
+    #     building_radius=building_radius,
+    #     location=(20, 20),
+    # )
 
-    add_mock_location(
-        g=g,
-        building_radius=building_radius,
-        location=(200, 200),
-    )
+    # add_mock_location(
+    #     g=g,
+    #     building_radius=building_radius,
+    #     location=(200, 200),
+    # )
 
     for x_value in range(building_radius, g.x - building_radius):
         tile = []
